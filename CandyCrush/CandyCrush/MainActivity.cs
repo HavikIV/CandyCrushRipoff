@@ -24,8 +24,40 @@ namespace CandyCrush
             // Get our button from the layout resource,
             // and attach an event to it
             Button button = FindViewById<Button>(Resource.Id.MyButton);
+            Button btnFindCombos = FindViewById<Button>(Resource.Id.btnClear);
+            candyGrid gameGrid = new candyGrid();
 
-            button.Click += delegate { CandyCrush.candies.candy firstCandy = new CandyCrush.candies.candy(); ; button.Text = firstCandy.getName() + " " + count++; };
+            button.Click += delegate {
+                // assign candies to the grid
+                for (int row = 0; row < gameGrid.getRows(); row++)
+                {
+                    for (int column = 0; column < gameGrid.getColumns(); column++)
+                    {
+                        gameGrid.assignCandy(row, column);
+                    }
+                }
+
+                TextView displayCandies = new TextView(this);
+
+                displayCandies.Text = gameGrid.displaygrid(0, 0);
+
+                LinearLayout layout = FindViewById<LinearLayout>(Resource.Id.linearLayout1);
+                layout.AddView(displayCandies);
+
+                button.Text = gameGrid.displayCandy(8,5) + " " + count++;
+            };
+
+            btnFindCombos.Click += delegate
+            {
+                gameGrid.findCombos();
+
+                TextView displayCandies = new TextView(this);
+
+                displayCandies.Text = gameGrid.displaygrid(0, 0);
+
+                LinearLayout layout = FindViewById<LinearLayout>(Resource.Id.linearLayout1);
+                layout.AddView(displayCandies);
+            };
         }
     }
 }
