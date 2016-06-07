@@ -38,13 +38,13 @@ namespace CandyCrush
 
         public void assignCandy(int row, int col)
         {
-            grid[row, col] = new candy(rand);
+            grid[row, col] = new candy(rand, "none"); // candies should have no stripes when the level is loaded
         }
 
         //  Displays the candy at the specific location in the  grid
         public string displayCandy(int row, int col)
         {
-            return grid[row, col].getName();
+            return grid[row, col].getType();
         }
 
         //  Displays all of the candies in the grid recursively from the first candy to the last, row-wise
@@ -52,13 +52,13 @@ namespace CandyCrush
         {
             if (col == 8 && row != 8)
             {
-                return " " + grid[row, col].getName() + displaygrid(row + 1, 0) + "\n";
+                return " " + grid[row, col].getType() + displaygrid(row + 1, 0);
             }
             else if (col != 8)
             {
-                return " " + grid[row, col].getName() + displaygrid(row, col + 1);
+                return " " + grid[row, col].getType() + displaygrid(row, col + 1);
             }
-            return " " + grid[row, col].getName();
+            return " " + grid[row, col].getType();
         }
 
         public void findCombos()
@@ -68,22 +68,22 @@ namespace CandyCrush
             {
                 for (int col = 0; col < 7; col++)
                 {
-                    if (grid[row, col].getName() == grid[row, col + 1].getName() && grid[row, col].getName() == grid[row, col + 2].getName())
+                    if (grid[row, col].getType() == grid[row, col + 1].getType() && grid[row, col].getType() == grid[row, col + 2].getType())
                     {
                         grid[row, col] = null;
                         grid[row, col + 1] = null;
                         grid[row, col + 2] = null;
                         candyDestroyed = true;
                     }
-                    if (row <= 7 && candyDestroyed == false)
-                    {
-                        if(grid[row, col].getName() == grid[row + 1, col].getName() && grid[row, col].getName() == grid[row + 2, col].getName())
-                        {
-                            grid[row, col] = null;
-                            grid[row + 1, col] = null;
-                            grid[row + 2, col] = null;
-                        }
-                    }
+                    //if (row <= 7 && candyDestroyed == false)
+                    //{
+                    //    if(grid[row, col].getType() == grid[row + 1, col].getType() && grid[row, col].getType() == grid[row + 2, col].getType())
+                    //    {
+                    //        grid[row, col] = null;
+                    //        grid[row + 1, col] = null;
+                    //        grid[row + 2, col] = null;
+                    //    }
+                    //}
                     if (candyDestroyed)
                     {
                         col += 2;
