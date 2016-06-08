@@ -1,19 +1,26 @@
 ﻿using System;
+using System.Collections.Generic;
+
 using Android.App;
 using Android.Content;
+using Android.Content.PM;
 using Android.Runtime;
 using Android.Views;
 using Android.Widget;
 using Android.OS;
 
+using CocosSharp;
+
 namespace CandyCrush
 {
-    [Activity(Label = "CandyCrush", MainLauncher = true, Icon = "@drawable/icon")]
-
+    [Activity(Label = "CandyCrush", MainLauncher = true, Icon = "@drawable/icon",
+        AlwaysRetainTaskState = true,
+        LaunchMode = LaunchMode.SingleInstance,
+        ConfigurationChanges = ConfigChanges.Orientation | ConfigChanges.ScreenSize | ConfigChanges.Keyboard | ConfigChanges.KeyboardHidden)]
     public class MainActivity : Activity
     {
         int count = 1;
-        
+
         protected override void OnCreate(Bundle bundle)
         {
             base.OnCreate(bundle);
@@ -21,43 +28,48 @@ namespace CandyCrush
             // Set our view from the "main" layout resource
             SetContentView(Resource.Layout.Main);
 
-            // Get our button from the layout resource,
-            // and attach an event to it
-            Button button = FindViewById<Button>(Resource.Id.MyButton);
-            Button btnFindCombos = FindViewById<Button>(Resource.Id.btnClear);
-            candyGrid gameGrid = new candyGrid();
+            // Get our game view from the layout resource,
+            // and attach the view created event to it
+            CCGameView gameView = (CCGameView)FindViewById(Resource.Id.GameView);
+            gameView.ViewCreated += LoadGame;
+        }
 
-            button.Click += delegate {
-                // assign candies to the grid
-                for (int row = 0; row < gameGrid.getRows(); row++)
+        void LoadGame(object sender, EventArgs e)
+        {
+            CCGameView gameView = sender as CCGameView;
+
+            if (gameView != null)
+            {
+                var contentSearchPaths = new List<string>() { "Fonts", "Sounds" };
+                CCSizeI viewSize = gameView.ViewSize;
+
+                int width = 1024;
+                int height = 768;
+
+                // Set world dimensions
+                gameView.DesignResolution = new CCSizeI(width, height);
+
+                // Determine whether to use the high or low def versions of our images
+                // Make sure the default texel to content size ratio is set correctly
+                // Of course you're free to have a finer set of image resolutions e.g (ld, hd, super-hd)
+                if (width < viewSize.Width)
                 {
-                    for (int column = 0; column < gameGrid.getColumns(); column++)
-                    {
-                        gameGrid.assignCandy(row, column);
-                    }
+                    contentSearchPaths.Add("Images/Hd");
+                    CCSprite.DefaultTexelToContentSizeRatio = 2.0f;
+                }
+                else
+                {
+                    contentSearchPaths.Add("Images/Ld");
+                    CCSprite.DefaultTexelToContentSizeRatio = 1.0f;
                 }
 
-                TextView displayCandies = new TextView(this);
+                gameView.ContentManager.SearchPaths = contentSearchPaths;
 
-                displayCandies.Text = gameGrid.displaygrid(0, 0);
-
-                LinearLayout layout = FindViewById<LinearLayout>(Resource.Id.linearLayout1);
-                layout.AddView(displayCandies);
-
-                button.Text = gameGrid.displayCandy(8,5) + " " + count++;
-            };
-
-            btnFindCombos.Click += delegate
-            {
-                gameGrid.findCombos();
-
-                TextView displayCandies = new TextView(this);
-
-                displayCandies.Text = gameGrid.displaygrid(0, 0);
-
-                LinearLayout layout = FindViewById<LinearLayout>(Resource.Id.linearLayout1);
-                layout.AddView(displayCandies);
-            };
+                CCScene gameScene = new CCScene(gameView);
+                gameScene.AddLayer(new GameLayer());
+                gameView.RunWithScene(gameScene);
+            }
         }
     }
 }
+
