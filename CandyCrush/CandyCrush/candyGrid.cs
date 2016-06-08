@@ -63,33 +63,12 @@ namespace CandyCrush
 
         public void findCombos()
         {
-            bool candyDestroyed = false;
-            for (int row = 0; row < 9; row++)
+            string candyType = grid[0, 0].getType();
+            int horizontalLength = 1;
+            int row = 0;
+            for (int col = 0; col >= 0 && grid[row, col - 1].getType() == candyType; col--)
             {
-                for (int col = 0; col < 7; col++)
-                {
-                    if (grid[row, col].getType() == grid[row, col + 1].getType() && grid[row, col].getType() == grid[row, col + 2].getType())
-                    {
-                        grid[row, col] = null;
-                        grid[row, col + 1] = null;
-                        grid[row, col + 2] = null;
-                        candyDestroyed = true;
-                    }
-                    //if (row <= 7 && candyDestroyed == false)
-                    //{
-                    //    if(grid[row, col].getType() == grid[row + 1, col].getType() && grid[row, col].getType() == grid[row + 2, col].getType())
-                    //    {
-                    //        grid[row, col] = null;
-                    //        grid[row + 1, col] = null;
-                    //        grid[row + 2, col] = null;
-                    //    }
-                    //}
-                    if (candyDestroyed)
-                    {
-                        col += 2;
-                        candyDestroyed = false;
-                    }
-                }
+                horizontalLength++;
             }
         }
 

@@ -36,7 +36,7 @@ namespace CandyCrush
         // Generates a candy by generating a random number 
         public int generateCandy()
         {
-            return generateNumber();
+            return generateCandyType();
         }
 
         //  Returns the candy's name
@@ -59,46 +59,11 @@ namespace CandyCrush
             stripeDirection = direction;
         }
 
-        // Generate a random number within the range of 1-750
-        // will return a number that corresponds with a candy after the random number is evaluated
-        // the first 500 numbers will used to candies of being red, blue, yellow, purple, and green
-        // 1-150 -> Red, 151-300 -> Blue, 301-450 -> Yellow, 451-600 -> Purple, 601-750 -> Green
-        // rest of the numbers will be used to generate special candies.
-        // Maybe use a second number for special candies, in either case special candies should have
-        // of being created.
-        public int generateNumber()
+        // Generate a random number within the range of 1-5
+        // 1 -> Red, 2 -> Blue, 3 -> Yellow, 4 -> Purple, 5 -> Green
+        public int generateCandyType()
         {
-            //Random rand = new Random(); // declares a random object
-            int randomNumber; // variable to hold a random number
-            randomNumber = rand.Next(1, 750); // assigns a number between 1-750 to randomNumber
-
-            // determine what candy is generated
-            if (randomNumber <= 150)
-            {
-                // Red candy is generated
-                return 0;
-            }
-            else if (randomNumber > 151 && randomNumber <= 300)
-            {
-                // Blue candy is generated
-                return 1;
-            }
-            else if (randomNumber > 301 && randomNumber <= 450)
-            {
-                // Yellow candy is generated
-                return 2;
-            }
-            else if (randomNumber > 450 && randomNumber <= 600)
-            {
-                // Purple candy is generated
-                return 3;
-            }
-            else if (randomNumber > 600 && randomNumber <= 750)
-            {
-                // Green candy is generated
-                return 4;
-            }
-            return 0; // returns a red candy by default
+            return rand.Next(1, 5); // returns a number between 1-5 to randomNumber
         }
     }
 }
