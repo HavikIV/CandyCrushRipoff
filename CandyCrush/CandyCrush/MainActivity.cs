@@ -15,14 +15,15 @@ namespace CandyCrush
 {
     [Activity(Label = "CandyCrush", MainLauncher = true, Icon = "@drawable/icon",
         AlwaysRetainTaskState = true,
+        Theme = "@android:style/Theme.NoTitleBar",
         LaunchMode = LaunchMode.SingleInstance,
-        ConfigurationChanges = ConfigChanges.Orientation | ConfigChanges.ScreenSize | ConfigChanges.Keyboard | ConfigChanges.KeyboardHidden)]
+        ScreenOrientation = ScreenOrientation.Portrait,
+        ConfigurationChanges = ConfigChanges.Keyboard | ConfigChanges.KeyboardHidden)]
     public class MainActivity : Activity
     {
-        int count = 1;
-
         protected override void OnCreate(Bundle bundle)
         {
+            RequestWindowFeature(WindowFeatures.NoTitle);
             base.OnCreate(bundle);
 
             // Set our view from the "main" layout resource
@@ -43,11 +44,12 @@ namespace CandyCrush
                 var contentSearchPaths = new List<string>() { "Fonts", "Sounds" };
                 CCSizeI viewSize = gameView.ViewSize;
 
-                int width = 1024;
-                int height = 768;
+                int width = 768;
+                int height = 1024;
 
                 // Set world dimensions
                 gameView.DesignResolution = new CCSizeI(width, height);
+                
 
                 // Determine whether to use the high or low def versions of our images
                 // Make sure the default texel to content size ratio is set correctly
@@ -65,8 +67,11 @@ namespace CandyCrush
 
                 gameView.ContentManager.SearchPaths = contentSearchPaths;
 
-                CCScene gameScene = new CCScene(gameView);
-                gameScene.AddLayer(new GameLayer());
+                //CCScene gameScene = new CCScene(gameView);
+                //gameScene.AddLayer(new GameLayer());
+                //gameScene.AddLayer(new gridLayer());
+                //gameScene.AddLayer(new tileLayer());
+                CCScene gameScene = new GameScene(gameView);
                 gameView.RunWithScene(gameScene);
             }
         }

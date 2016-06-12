@@ -65,7 +65,8 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="candies.cs" />
-    <Compile Include="candyGrid.cs" />
+    <Compile Include="GameScene.cs" />
+    <Compile Include="gridLayer.cs" />
     <Compile Include="MainActivity.cs">
       <SubType>Code</SubType>
     </Compile>
@@ -95,6 +96,21 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="Properties\AndroidManifest.xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <AndroidAsset Include="Assets\Content\ball.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <AndroidAsset Include="Assets\Content\paddle.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <AndroidAsset Include="Assets\Content\sweetseduction.jpg" />
+  </ItemGroup>
+  <ItemGroup>
+    <AndroidAsset Include="Assets\Content\background.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <AndroidAsset Include="Assets\Content\tile.png" />
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath)\Xamarin\Android\Xamarin.Android.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

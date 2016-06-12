@@ -7,19 +7,18 @@ namespace CandyCrush
 {
     public class GameLayer : CCLayerColor
     {
+        CCLayer backgroundLayer;
+        CCSprite background;
 
-        // Define a label variable
-        CCLabel label;
-
-        public GameLayer() : base(CCColor4B.Blue)
+        public GameLayer() : base(CCColor4B.Black)
         {
-
-            // create and initialize a Label
-            label = new CCLabel("Hello CocosSharp", "Fonts/MarkerFelt", 22, CCLabelFormat.SpriteFont);
-
-            // add the label as a child to this Layer
-            AddChild(label);
-
+            backgroundLayer = new CCLayer();
+            background = new CCSprite("background");
+            background.AnchorPoint = new CCPoint(0, 0);
+            background.IsAntialiased = false;
+            background.Scale = 2.5f;
+            backgroundLayer.AddChild(background);
+            AddChild(backgroundLayer);
         }
 
         protected override void AddedToScene()
@@ -30,7 +29,8 @@ namespace CandyCrush
             var bounds = VisibleBoundsWorldspace;
 
             // position the label on the center of the screen
-            label.Position = bounds.Center;
+            //label.Position = bounds.Center;
+            //background.Position = VisibleBoundsWorldspace.Center;
 
             // Register for touch events
             var touchListener = new CCEventListenerTouchAllAtOnce();
