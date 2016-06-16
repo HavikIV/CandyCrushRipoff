@@ -13,7 +13,7 @@ using Android.Widget;
 using CocosSharp;
 using CandyCrush.Entities;
 
-namespace CandyCrush
+namespace CandyCrush.Scenes
 {
     public class GameScene : CCScene
     {
