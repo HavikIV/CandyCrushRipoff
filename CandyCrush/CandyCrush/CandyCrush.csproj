@@ -106,9 +106,6 @@
     <AndroidAsset Include="Assets\Content\Images\tile.png" />
   </ItemGroup>
   <ItemGroup>
-    <AndroidAsset Include="Assets\Content\Images\tinyGolfBall.png" />
-  </ItemGroup>
-  <ItemGroup>
     <AndroidAsset Include="Assets\Content\Images\BlueJollyRancher.png" />
   </ItemGroup>
   <ItemGroup>

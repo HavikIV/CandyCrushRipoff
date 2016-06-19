@@ -28,10 +28,24 @@ namespace CandyCrush.Entities
         {
             string[] candyTypes = { "Peppermint Swirl", "Blue Jolly Rancher", "Candy Corn", "Purple Nerd", "Green Elliptical" };
             candyType = generateCandyType(r);
-            candyName = candyTypes[candyType];
+            candyName = candyTypes[candyType - 1];
             row = gRow;
             column = gCol;
-            candySprite = new CCSprite("tinyGolfBall");
+            switch (candyType - 1)
+            {
+                case 0: { candySprite = new CCSprite("PeppermintSwirl"); break; }
+                case 1: { candySprite = new CCSprite("BlueJollyRancher"); break; }
+                case 2: { candySprite = new CCSprite("CandyCorn"); break; }
+                case 3: { candySprite = new CCSprite("PurpleNerds"); break; }
+                case 4: { candySprite = new CCSprite("GreenElliptical"); break; }
+                default: break;
+            }
+
+            CCLabel debugLabel = new CCLabel("[" + row +", " + column + "]", "Arial", 30, CCLabelFormat.SystemFont);
+            debugLabel.Color = CCColor3B.Black;
+            //debugLabel.Position = new CCPoint(10, 10);
+            debugLabel.AnchorPoint = new CCPoint(0, 0);
+            candySprite.AddChild(debugLabel);
             AddChild(candySprite);
         }
 
@@ -56,6 +70,11 @@ namespace CandyCrush.Entities
         public int getColumn()
         {
             return column;
+        }
+        public void setPosition(int ro, int col)
+        {
+            row = ro;
+            column = col;
         }
 
         // Generate a random number within the range of 1-5

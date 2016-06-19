@@ -23,6 +23,7 @@ namespace CandyCrush
         private int gridRows, gridColumns;
         private candy[,] grid;
         private Random rand = new Random();
+        private CCLabel debugLabel;
 
         public candyLayer()
         {
@@ -31,6 +32,7 @@ namespace CandyCrush
             grid = new candy[gridRows, gridColumns];
             fillGrid(); // fills the grid for the first time
             addCandies(); // adds the candies to the layer to be displayed
+            addDebug();
         }
 
         public void fillGrid()
@@ -42,6 +44,15 @@ namespace CandyCrush
                     assignCandy(i, j); // assigns a new candy the location [i,j] in the grid
                 }
             }
+        }
+
+        void addDebug()
+        {
+            debugLabel = new CCLabel("Debug info shows here...", "Arial", 30, CCLabelFormat.SystemFont);
+            debugLabel.Color = CCColor3B.Black;
+            //debugLabel.Position = new CCPoint(10, 10);
+            debugLabel.AnchorPoint = new CCPoint(0, 0);
+            AddChild(debugLabel);
         }
 
         //  Assigns a candy at the grid location [row, col]
@@ -59,10 +70,56 @@ namespace CandyCrush
             {
                 for (int j = 0; j < gridColumns; j++)
                 {
-                    grid[i, j].Position = new CCPoint(70 + (62 * i), 810 - (70 * j));
+                    grid[i, j].Position = new CCPoint(70 + (62 * j), 810 - (70 * i));
                     AddChild(grid[i, j]);
                 }
             }
+        }
+
+        public candy candyAt(int row, int col)
+        {
+            return grid[row, col];
+        }
+
+        public bool convertToPoint(CCPoint location, ref int row, ref int col)
+        {
+            if (location.X >= 38 && location.X < 598 && location.Y >= 216 && location.Y < 846)
+            {
+                debugLabel.Text = "Touch was within the grid.";
+                row = (846 - Convert.ToInt32(location.Y)) / 70;
+                col = (Convert.ToInt32(location.X) - 38) / 62;
+                return true;
+            }
+            else
+            {
+                return false;
+            }
+        }
+        public void trySwapHorizontal(int horzDelta, int vertDelta, int fromRow, int fromCol)
+        {
+            debugLabel.Text = "checking to see if a swap is possible.";
+            int toRow = fromRow + vertDelta;
+            int toCol = fromCol + horzDelta;
+
+            if (toRow < 0 || toRow >= gridRows)
+            {
+                return;
+            }
+            if (toCol < 0 || toCol >= gridColumns)
+            {
+                return;
+            }
+
+            candy toCandy = candyAt(toRow, toCol);
+            candy fromCandy = candyAt(fromRow, fromCol);
+            debugLabel.Text = "Switching candy at [" + fromRow + ", " + fromCol + "] with candy at [" + toRow + ", " + toCol + "].";
+
+            //toCandy.Position = new CCPoint(70 + (62 * toRow), 810 - (70 * toCol));
+            ////grid[toCandy.getRow(), toCandy.getColumn()].Position = new CCPoint(70 + (62 * toCandy.getRow()), 810 - (70 * toCandy.getColumn()));
+            //toCandy.setPosition(toRow, toCol);
+            //fromCandy.Position = new CCPoint(70 + (62 * fromRow), 810 - (70 * fromCol));
+            ////grid[fromCandy.getRow(), fromCandy.getColumn()].Position = new CCPoint(70 + (62 * fromCandy.getRow()), 810 - (70 * fromCandy.getColumn()));
+            //fromCandy.setPosition(fromRow, fromCol);
         }
 
         //public void findCombos()
