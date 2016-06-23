@@ -35,7 +35,7 @@ namespace CandyCrush.Scenes
             CreateTouchListener(); 
         }
 
-        void addDebug()
+        private void addDebug()
         {
             debugLabel = new CCLabel("Debug info shows here...", "Arial", 30, CCLabelFormat.SystemFont);
             debugLabel.Color = CCColor3B.Red;
@@ -44,7 +44,7 @@ namespace CandyCrush.Scenes
             cLayer.AddChild(debugLabel);
         }
 
-        void addBackground()
+        private void addBackground()
         {
             backgroundLayer = new CCLayer();
             var background = new CCSprite("background");
@@ -54,7 +54,7 @@ namespace CandyCrush.Scenes
             AddChild(backgroundLayer);
         }
 
-        void addTiles()
+        private void addTiles()
         {
             tilesLayer = new CCLayer();
             CCSprite tile;
@@ -72,7 +72,7 @@ namespace CandyCrush.Scenes
             AddChild(tilesLayer);
         }
 
-        void addCandyLayer()
+        private void addCandyLayer()
         {
             cLayer = new candyLayer();
             AddChild(cLayer);
@@ -103,7 +103,7 @@ namespace CandyCrush.Scenes
             }
         }
 
-        void HandleTouchesMoved(System.Collections.Generic.List<CCTouch> touches, CCEvent touchEvent)
+        private void HandleTouchesMoved(List<CCTouch> touches, CCEvent touchEvent)
         {
             if (swipeFromCol > 8)
             {
@@ -140,10 +140,21 @@ namespace CandyCrush.Scenes
                 if (horzDelta != 0 || vertDelta != 0)
                 {
                     debugLabel.Text = "Checking to see if the swap is valid.";
-                    cLayer.trySwapHorizontal(horzDelta, vertDelta, swipeFromRow, swipeFromCol);
+                    cLayer.trySwap(horzDelta, vertDelta, swipeFromRow, swipeFromCol);
                     swipeFromCol = 90;
                 }
             }
+        }
+
+        private void touchesEnded(List<CCTouch> touches, CCEvent touchEvent)
+        {
+            swipeFromRow = 90;
+            swipeFromCol = 90;
+        }
+
+        private void touchesCancelled(List<CCTouch> touches, CCEvent touchEvent)
+        {
+            touchesEnded(touches, touchEvent);
         }
     }
 }

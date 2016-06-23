@@ -28,17 +28,13 @@ namespace CandyCrush
             // Use the bounds to layout the positioning of our drawable assets
             var bounds = VisibleBoundsWorldspace;
 
-            // position the label on the center of the screen
-            //label.Position = bounds.Center;
-            //background.Position = VisibleBoundsWorldspace.Center;
-
             // Register for touch events
             var touchListener = new CCEventListenerTouchAllAtOnce();
             touchListener.OnTouchesEnded = OnTouchesEnded;
             AddEventListener(touchListener, this);
         }
 
-        void OnTouchesEnded(List<CCTouch> touches, CCEvent touchEvent)
+        private void OnTouchesEnded(List<CCTouch> touches, CCEvent touchEvent)
         {
             if (touches.Count > 0)
             {

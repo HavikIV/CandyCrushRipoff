@@ -49,12 +49,13 @@ namespace CandyCrush.Entities
             AddChild(candySprite);
         }
 
-        //  Returns the candy's name
+        //  Returns what type of candy it is
         public int getType()
         {
             return candyType;
         }
 
+        //  points the caller to the location of the candySprite in memory
         public CCSprite getSprite()
         {
             return candySprite;
@@ -71,6 +72,8 @@ namespace CandyCrush.Entities
         {
             return column;
         }
+
+        //  Sets the new grid position of the candy
         public void setPosition(int ro, int col)
         {
             row = ro;
@@ -81,7 +84,7 @@ namespace CandyCrush.Entities
         // 1 -> Red, 2 -> Blue, 3 -> Yellow, 4 -> Purple, 5 -> Green
         public int generateCandyType(Random rand)
         {
-            return rand.Next(1, 5); // returns a number between 1-5 to randomNumber
+            return rand.Next(1, 6); // returns a number between 1-5 to randomNumber
         }
     }
 }
