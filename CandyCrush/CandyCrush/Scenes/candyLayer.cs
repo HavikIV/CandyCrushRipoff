@@ -30,12 +30,23 @@ namespace CandyCrush
         {
             gridColumns = 9;
             gridRows = 9;
+            possibleSwapCount = 0;
             grid = new candy[gridRows, gridColumns];
-            fillGrid(); // fills the grid for the first time
+            shuffle(); // fills the grid for the first time
             addCandies(); // adds the candies to the layer to be displayed
             addDebug();
-            //possibleSwaps = new List<Swap>();
             detectPossibleSwap();
+        }
+
+        public void shuffle()
+        {
+            do
+            {
+                fillGrid();
+                detectPossibleSwap();
+                possibleSwapCount = possibleSwaps.Count;
+            }
+            while (possibleSwapCount == 0);
         }
 
         public void fillGrid()
@@ -181,7 +192,7 @@ namespace CandyCrush
         }
 
         //  See if there's a chain at the given location in the grid
-        private bool hasChainAt(int row, int col)
+        public bool hasChainAt(int row, int col)
         {
             int cookieType = grid[row, col].getType();
 
@@ -266,22 +277,32 @@ namespace CandyCrush
             {
                 // Swap them
                 animateSwap(swap);
-                detectPossibleSwap();
+                removeMatches();        // Remove the matches
+                                        // Fill the grid back up
+                detectPossibleSwap();   // Need to update the list of possible swaps
             }
             else
             {
                 //  Swap is not possible so run the failed swap animation
                 failedSwapAnimation(swap);
             }
-            //animateSwap(fromCandy, toCandy); // complete and animate the swap
-            //animateSwap(swap);
+        }
+
+        public void disableListeners()
+        {
+            PauseListeners();
+        }
+
+        public void enableListeners()
+        {
+            ResumeListeners();
         }
 
         //  Visually animates the swap using the CCMoveTo function provided by CocosSharp,
         //  also updates the grid location of the candies
-        private void animateSwap(Swap swap) //candy fromCandy, candy toCandy
+        private void animateSwap(Swap swap)
         {
-            const float timeToTake = 0.5f; // in seconds
+            const float timeToTake = 0.2f; // in seconds
             CCFiniteTimeAction coreAction = null;
 
             //  Store the positions of the candies to be used to swap them
@@ -321,6 +342,75 @@ namespace CandyCrush
             coreAction = new CCMoveTo(timeToTake, positionA);
             secondAction = new CCMoveTo(timeToTake, positionB);
             swap.candyB.RunActions(coreAction, secondAction);
+        }
+
+        //  Method to find all chains in the grid 
+        public void removeMatches()
+        {
+            List<Chain> horizontalChains = detectHorizontalMatches();
+            List<Chain> verticalChains = detectVerticalMatches();
+
+            // Logic to remove the candies from the grid goes here, possibly call a method that takes the list of chains to work with
+            // Don't forget that candies have to be removed from the grid and then afterwards the sprites need to be removed from the screen separately
+            // which can be handle by another method
+        }
+
+        //  Detects any and all horizontal chains
+        private List<Chain> detectHorizontalMatches()
+        {
+            var horzList = new List<Chain>();
+            for (int row = 0; row < gridRows; row++)
+            {
+                for (int col = 0; col < gridColumns - 2;)
+                {
+                    if (grid[row, col] != null)
+                    {
+                        int matchType = grid[row, col].getType();
+                        if (grid[row, col + 1].getType() == matchType && grid[row, col + 2].getType() == matchType)
+                        {
+                            var chain = new Chain();
+                            chain.chainType = Chain.ChainType.ChainTypeHorizontal;
+                            do
+                            {
+                                chain.addCandy(candyAt(row, col));
+                                col += 1;
+                            }
+                            while (col < gridColumns && grid[row, col].getType() == matchType);
+                        }
+                    }
+                    col += 1;
+                }
+            }
+            return horzList;
+        }
+
+        //  Detects any and all vertical chains
+        private List<Chain> detectVerticalMatches()
+        {
+            var vertList = new List<Chain>();
+            for (int col = 0; col < gridColumns; col++)
+            {
+                for (int row = 0; row < gridRows - 2;)
+                {
+                    if (grid[row, col] != null)
+                    {
+                        int matchType = grid[row, col].getType();
+                        if (grid[row + 1, col].getType() == matchType && grid[row + 2, col].getType() == matchType)
+                        {
+                            var chain = new Chain();
+                            chain.chainType = Chain.ChainType.ChainTypeVertical;
+                            do
+                            {
+                                chain.addCandy(candyAt(row, col));
+                                row += 1;
+                            }
+                            while (row < gridRows && grid[row, col].getType() == matchType);
+                        }
+                    }
+                    row += 1;
+                }
+            }
+            return vertList;
         }
 
         private int convertYToRow(float y)

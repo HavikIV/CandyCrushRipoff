@@ -32,7 +32,7 @@ namespace CandyCrush.Scenes
             addCandyLayer();
             addDebug();
             swipeFromRow = swipeFromCol = 90;   //initializes the variables to 90 even though this isn't a valid location in the grid
-            CreateTouchListener(); 
+            CreateTouchListener();
         }
 
         private void addDebug()
@@ -83,6 +83,8 @@ namespace CandyCrush.Scenes
             var touchListener = new CCEventListenerTouchAllAtOnce();
             touchListener.OnTouchesMoved = HandleTouchesMoved;
             touchListener.OnTouchesBegan = HandleTouchesBegan;
+            touchListener.OnTouchesEnded = touchesEnded;
+            touchListener.OnTouchesCancelled = touchesCancelled;
             cLayer.AddEventListener(touchListener);
         }
 
@@ -109,7 +111,6 @@ namespace CandyCrush.Scenes
             {
                 return;
             }
-
             debugLabel.Text = "The user moved from the initial touch point.";
             // we only care about the first touch:
             var locationOnScreen = touches[0].Location;
@@ -140,8 +141,10 @@ namespace CandyCrush.Scenes
                 if (horzDelta != 0 || vertDelta != 0)
                 {
                     debugLabel.Text = "Checking to see if the swap is valid.";
+                    cLayer.disableListeners();
                     cLayer.trySwap(horzDelta, vertDelta, swipeFromRow, swipeFromCol);
                     swipeFromCol = 90;
+                    cLayer.ResumeListeners();
                 }
             }
         }
