@@ -20,11 +20,11 @@ namespace CandyCrush
     //  A class for a grid
     public class candyLayer : CCLayerColor
     {
-        private int gridRows, gridColumns;
+        private int gridRows, gridColumns, possibleSwapCount;
         private candy[,] grid;
         private Random rand = new Random();
         private CCLabel debugLabel;
-        readonly CCNode drawNodeRoot;
+        private List<Swap> possibleSwaps;
 
         public candyLayer()
         {
@@ -34,7 +34,8 @@ namespace CandyCrush
             fillGrid(); // fills the grid for the first time
             addCandies(); // adds the candies to the layer to be displayed
             addDebug();
-            drawNodeRoot = new CCNode { PositionX = 500f, PositionY = 350f };
+            //possibleSwaps = new List<Swap>();
+            detectPossibleSwap();
         }
 
         public void fillGrid()
@@ -90,6 +91,133 @@ namespace CandyCrush
             return grid[row, col];
         }
 
+        //  Detects how many swaps are possible, and adds the possible swaps in the possibleSwaps array
+        //  Will return the number of possible swaps that were detected in the grid
+        private void detectPossibleSwap()
+        {
+            possibleSwaps = new List<Swap>();
+            // for loop to go through the grid to find possible swaps
+            for (int row = 0; row < gridRows; row++)
+            {
+                for (int col = 0; col < gridColumns; col++)
+                {
+                    //  Grab the candy from grid
+                    candy checkCandy = grid[row, col];
+
+                    //  Make sure that there's a candy at the given grid location
+                    if (checkCandy != null)
+                    {
+                        //  See if it's possible to swap to the right
+                        if (col < gridColumns - 1)
+                        {
+                            //  Grab the candy to the right from the checkCandy
+                            candy otherCandy = grid[row, col + 1];
+                            if (otherCandy != null)
+                            {
+                                //  Swap the candies
+                                grid[row, col] = otherCandy;
+                                grid[row, col + 1] = checkCandy;
+
+                                //  Check to see if either one of the swapped candies is now part of a chain
+                                if (hasChainAt(row, col + 1) || hasChainAt(row, col))
+                                {
+                                    Swap swap = new Swap();
+                                    swap.candyA = checkCandy;
+                                    swap.candyB = otherCandy;
+
+                                    //  Add the candies to the array of possibleSwaps
+                                    possibleSwaps.Add(swap);
+                                }
+
+                                //  Swap the candies back to their original positions
+                                grid[row, col] = checkCandy;
+                                grid[row, col + 1] = otherCandy;
+                            }
+                        }
+
+                        //  See if it's possible to swap below
+                        if (row < gridRows - 1)
+                        {
+                            //  Grab the candy to the right from the checkCandy
+                            candy otherCandy = grid[row + 1, col];
+                            if (otherCandy != null)
+                            {
+                                //  Swap the candies
+                                grid[row, col] = otherCandy;
+                                grid[row + 1, col] = checkCandy;
+
+                                //  Check to see if either one of the swapped candies is now part of a chain
+                                if (hasChainAt(row + 1, col) || hasChainAt(row, col))
+                                {
+                                    Swap swap = new Swap();
+                                    swap.candyA = checkCandy;
+                                    swap.candyB = otherCandy;
+
+                                    //  Add the candies to the array of possibleSwaps
+                                    possibleSwaps.Add(swap);
+                                }
+
+                                //  Swap the candies back to their original positions
+                                grid[row, col] = checkCandy;
+                                grid[row + 1, col] = otherCandy;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        //  Check to see if a swap is possible
+        private bool isSwapPossible(Swap swap)
+        {
+            foreach (var item in possibleSwaps)
+            {
+                if ((item.candyA == swap.candyA && item.candyB == swap.candyB) ||(item.candyA == swap.candyB && item.candyB == swap.candyA))
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        //  See if there's a chain at the given location in the grid
+        private bool hasChainAt(int row, int col)
+        {
+            int cookieType = grid[row, col].getType();
+
+            //  Check to see if there's a chain in the row on either side of the candy
+            int horzLenght = 1;
+            for (int i = col - 1; i >= 0 && grid[row, i].getType() == cookieType; i--)
+            {
+                horzLenght++;
+            }
+            for (int i = col + 1; i < gridColumns && grid[row, i].getType() == cookieType; i++)
+            {
+                horzLenght++;
+            }
+
+            //  Returns true if there's a chain in the row
+            if (horzLenght >= 3)
+            {
+                return true;
+            }
+
+            //  Check to see if there's a chain in the column either above/below the candy
+            int vertLength = 1;
+            for (int i = row - 1; i >= 0 && grid[i, col].getType() == cookieType; i--)
+            {
+                vertLength++;
+            }
+            for (int i = row + 1; i < gridRows && grid[i, col].getType() == cookieType; i++)
+            {
+                vertLength++;
+            }
+
+            //  Returns true if there's a chain in the column
+            //  This also becomes the default return for the method
+            return (vertLength >= 3);
+        }
+
         //  Check to see if the touch location is within the grid and if it is
         //  then returns true and the row and column position of the candy
         public bool convertToPoint(CCPoint location, ref int row, ref int col)
@@ -130,33 +258,69 @@ namespace CandyCrush
             candy fromCandy = candyAt(fromRow, fromCol);
             debugLabel.Text = "Switching candy at [" + fromRow + ", " + fromCol + "] with candy at [" + toRow + ", " + toCol + "].";
 
-            animateSwap(fromCandy, toCandy); // complete and animate the swap
+            Swap swap = new Swap();
+            swap.candyA = fromCandy;
+            swap.candyB = toCandy;
+
+            if (isSwapPossible(swap))
+            {
+                // Swap them
+                animateSwap(swap);
+                detectPossibleSwap();
+            }
+            else
+            {
+                //  Swap is not possible so run the failed swap animation
+                failedSwapAnimation(swap);
+            }
+            //animateSwap(fromCandy, toCandy); // complete and animate the swap
+            //animateSwap(swap);
         }
 
         //  Visually animates the swap using the CCMoveTo function provided by CocosSharp,
         //  also updates the grid location of the candies
-        private void animateSwap(candy fromCandy, candy toCandy)
+        private void animateSwap(Swap swap) //candy fromCandy, candy toCandy
         {
             const float timeToTake = 0.5f; // in seconds
             CCFiniteTimeAction coreAction = null;
 
             //  Store the positions of the candies to be used to swap them
-            CCPoint positionA = new CCPoint(fromCandy.Position);
-            CCPoint positionB = new CCPoint(toCandy.Position);
+            CCPoint positionA = new CCPoint(swap.candyA.Position);
+            CCPoint positionB = new CCPoint(swap.candyB.Position);
 
             //  Animate the swapping of the candies
             coreAction = new CCMoveTo(timeToTake, positionB);
-            fromCandy.AddAction(coreAction);
+            swap.candyA.AddAction(coreAction);
             coreAction = new CCMoveTo(timeToTake, positionA);
-            toCandy.AddAction(coreAction);
+            swap.candyB.AddAction(coreAction);
 
             //  Update the row and column positions for each candy
-            fromCandy.setPosition(convertYToRow(positionB.Y), convertXToColumn(positionB.X));
-            toCandy.setPosition(convertYToRow(positionA.Y), convertXToColumn(positionA.X));
+            swap.candyA.setPosition(convertYToRow(positionB.Y), convertXToColumn(positionB.X));
+            swap.candyB.setPosition(convertYToRow(positionA.Y), convertXToColumn(positionA.X));
 
             //  Update the position of the candies within the grid
-            grid[fromCandy.getRow(), fromCandy.getColumn()] = fromCandy;
-            grid[toCandy.getRow(), toCandy.getColumn()] = toCandy;
+            grid[swap.candyA.getRow(), swap.candyA.getColumn()] = swap.candyA;
+            grid[swap.candyB.getRow(), swap.candyB.getColumn()] = swap.candyB;
+        }
+
+        //  Animation for a failed swap
+        private void failedSwapAnimation(Swap swap)
+        {
+            const float timeToTake = 0.1f; // in seconds
+            CCFiniteTimeAction coreAction = null;
+            CCFiniteTimeAction secondAction = null;
+
+            //  Store the positions of the candies to be used to swap them
+            CCPoint positionA = new CCPoint(swap.candyA.Position);
+            CCPoint positionB = new CCPoint(swap.candyB.Position);
+
+            //  Animate moving the candies back and forth
+            coreAction = new CCMoveTo(timeToTake, positionB);
+            secondAction = new CCMoveTo(timeToTake, positionA);
+            swap.candyA.RunActions(coreAction, secondAction);
+            coreAction = new CCMoveTo(timeToTake, positionA);
+            secondAction = new CCMoveTo(timeToTake, positionB);
+            swap.candyB.RunActions(coreAction, secondAction);
         }
 
         private int convertYToRow(float y)
