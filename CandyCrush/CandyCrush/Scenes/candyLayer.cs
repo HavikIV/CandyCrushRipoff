@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading.Tasks;
 
 using Android.App;
 using Android.Content;
@@ -25,6 +26,7 @@ namespace CandyCrush
         private Random rand = new Random();
         private CCLabel debugLabel;
         private List<Swap> possibleSwaps;
+        private List<Chain> deleteChains;
 
         public candyLayer()
         {
@@ -277,9 +279,14 @@ namespace CandyCrush
             {
                 // Swap them
                 animateSwap(swap);
-                removeMatches();        // Remove the matches
-                                        // Fill the grid back up
-                detectPossibleSwap();   // Need to update the list of possible swaps
+                do
+                {
+                    removeMatches();        // Remove the matches
+                    dropCandies();          // Move the candies down
+                    fillUpColumns();        // Fill the grid back up
+                    detectPossibleSwap();   // Need to update the list of possible swaps
+                }
+                while (deleteChains.Count != 0);
             }
             else
             {
@@ -302,7 +309,7 @@ namespace CandyCrush
         //  also updates the grid location of the candies
         private void animateSwap(Swap swap)
         {
-            const float timeToTake = 0.2f; // in seconds
+            const float timeToTake = 0.3f; // in seconds
             CCFiniteTimeAction coreAction = null;
 
             //  Store the positions of the candies to be used to swap them
@@ -345,7 +352,7 @@ namespace CandyCrush
         }
 
         //  Method to find all chains in the grid 
-        public void removeMatches()
+        private void removeMatches()
         {
             List<Chain> horizontalChains = detectHorizontalMatches();
             List<Chain> verticalChains = detectVerticalMatches();
@@ -353,6 +360,105 @@ namespace CandyCrush
             // Logic to remove the candies from the grid goes here, possibly call a method that takes the list of chains to work with
             // Don't forget that candies have to be removed from the grid and then afterwards the sprites need to be removed from the screen separately
             // which can be handle by another method
+            foreach (Chain item in verticalChains)
+            {
+                horizontalChains.Add(item);
+            }
+            deleteChains = horizontalChains;
+            removeCandies(horizontalChains);
+        }
+
+        //  Remove the candy objects from the screen and the grid
+        private void removeCandies(List<Chain> chains)
+        {
+            foreach (Chain chain in chains)
+            {
+                foreach (candy candy in chain.candies)
+                {
+                    //  Remove the candy from the grid
+                    grid[candy.getRow(), candy.getColumn()] = null;
+                    CCSprite removeCandy = candy.getSprite();
+                    if (removeCandy != null)
+                    {
+                        const float timeToTake = 0.3f; // in seconds
+                        CCFiniteTimeAction coreAction = null;
+                        CCAction easing = null;
+
+                        coreAction = new CCScaleTo(timeToTake, 0.3f);
+                        easing = new CCEaseOut(coreAction, 0.1f);
+                        removeCandy.RunAction(coreAction);
+
+                        removeCandy.RemoveFromParent(); // This should remove the candy from the screen
+                    }
+                }
+            }
+        }
+
+        //  Drops the candies down 
+        private void dropCandies()
+        {
+            for (int col = 0; col < gridColumns; col++)
+            {
+                for (int row = 8; row > 0; row--)
+                {
+                    candy Candy = candyAt(row, col);
+                    if (Candy == null)
+                    {
+                        // Find which row number to drop the candy from
+                        int tempRow = row - 1;
+                        while (grid[tempRow, col] == null)
+                        {
+                            tempRow--;
+                        }
+                        CCPoint position = new CCPoint(70 + (62 * col), 810 - (70 * row));
+                        Candy = candyAt(tempRow, col);
+                        Candy.AddAction(new CCEaseOut(new CCMoveTo(0.3f, position), 0.8f));
+                        Candy.setPosition(tempRow, col);    // Update the row and column of the candy
+                        grid[row, col] = Candy;             // Update the position of the candy within the grid
+                        grid[tempRow, col] = null;
+
+                    }
+                }
+            }
+        }
+
+        //  Fill the holes at the top of the of each column
+        private void fillUpColumns()
+        {
+            int candyType = 0;
+            for (int col = 0; col < gridColumns; col++)
+            {
+                for (int row = 0; row < gridRows && grid[row, col] == null; row++)
+                {
+                    int newCandyType  = 0;
+                    candy newCandy = new candy(rand, row, col);
+                    newCandyType = newCandy.getType();
+                    while (newCandyType == candyType)
+                    {
+                        newCandy = new candy(rand, row, col);
+                        newCandyType = newCandy.getType();
+                    }
+                    candyType = newCandyType;
+                    grid[row, col] = newCandy;
+
+                    // Once all of the candy is created to fill the grid back up
+                    // Use an animation to add it to the screen
+                    animateAddingNewCandies(row, col);
+                }
+            }
+        }
+
+        //  Using an animation to add all of the new candies to screen
+        private void animateAddingNewCandies(int row, int col)
+        {
+            // Starting position for the candy to be added
+            CCPoint beginningPosition = new CCPoint(70 + (62 * col), 810 - (70 * row) + 50);
+            // The final position of where the candy goes
+            CCPoint endPosition = new CCPoint(70 + (62 * col), 810 - (70 * row));
+            grid[row, col].Position = beginningPosition;
+            AddChild(grid[row, col]);   // Add the candy to the screen
+            // Animation to move the candy into it's proper position
+            grid[row, col].AddAction(new CCMoveTo(0.3f, endPosition));
         }
 
         //  Detects any and all horizontal chains
@@ -369,13 +475,14 @@ namespace CandyCrush
                         if (grid[row, col + 1].getType() == matchType && grid[row, col + 2].getType() == matchType)
                         {
                             var chain = new Chain();
-                            chain.chainType = Chain.ChainType.ChainTypeHorizontal;
+                            chain.chainType = Chain.ChainType.Horizontal;
                             do
                             {
                                 chain.addCandy(candyAt(row, col));
                                 col += 1;
                             }
                             while (col < gridColumns && grid[row, col].getType() == matchType);
+                            horzList.Add(chain);
                         }
                     }
                     col += 1;
@@ -398,13 +505,14 @@ namespace CandyCrush
                         if (grid[row + 1, col].getType() == matchType && grid[row + 2, col].getType() == matchType)
                         {
                             var chain = new Chain();
-                            chain.chainType = Chain.ChainType.ChainTypeVertical;
+                            chain.chainType = Chain.ChainType.Vertical;
                             do
                             {
                                 chain.addCandy(candyAt(row, col));
                                 row += 1;
                             }
                             while (row < gridRows && grid[row, col].getType() == matchType);
+                            vertList.Add(chain);
                         }
                     }
                     row += 1;

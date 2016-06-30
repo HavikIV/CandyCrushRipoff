@@ -22,7 +22,7 @@ namespace CandyCrush
 
         public enum ChainType
         {
-            ChainTypeHorizontal, ChainTypeVertical
+            Horizontal, Vertical
         };
 
         public Chain()
