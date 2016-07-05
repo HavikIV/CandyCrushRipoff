@@ -27,6 +27,7 @@ namespace CandyCrush
         private CCLabel debugLabel;
         private List<Swap> possibleSwaps;
         private List<Chain> deleteChains;
+        private bool dropped, filledAgain, finishedRemoving;
 
         public candyLayer()
         {
@@ -252,7 +253,7 @@ namespace CandyCrush
 
         //  Checks to see if a swap is possible, if it is then it will do so
         //  otherwise it will call for a failed swap animation
-        public void trySwap(int horzDelta, int vertDelta, int fromRow, int fromCol)
+        public async void trySwap(int horzDelta, int vertDelta, int fromRow, int fromCol)
         {
             debugLabel.Text = "checking to see if a swap is possible.";
             int toRow = fromRow + vertDelta;
@@ -279,12 +280,35 @@ namespace CandyCrush
             {
                 // Swap them
                 animateSwap(swap);
+                await Task.Delay(300);  // Wait for the swap animation to finish before continuing
+                dropped = false;    // Sets dropped to false, it will be used to check if the game finished dropping all of the candies
+                filledAgain = false;
+                finishedRemoving = false;
                 do
                 {
+                    //  My reason to add the while loops with the awaits is that the App seems to come back to this do while even before the
+                    //  the method completely finish running. I'm guessing that awaits in the methods is forcing the App to continue running while it's awaiting
+                    //  to continue within the method. It's possible that the called methods are running on a separate threads from the thread that is running this
+                    //  method, so while those threads are put on hold, the App jumps back to this thread. After putting in while loops the app does seems to work like
+                    //  I want it to so I'm probably on the right track, thought there must be a better way to accomplish as the current way looks ugly.
+
                     removeMatches();        // Remove the matches
+                    while (!finishedRemoving)
+                    {
+                        await Task.Delay(50);
+                    }
                     dropCandies();          // Move the candies down
+                    while (!dropped)        // As long as the dropCandies method isn't finished it will keep adding an await
+                    {
+                        await Task.Delay(50);
+                    }
                     fillUpColumns();        // Fill the grid back up
+                    while (!filledAgain)
+                    {
+                        await Task.Delay(50);
+                    }
                     detectPossibleSwap();   // Need to update the list of possible swaps
+                    await Task.Delay(300);
                 }
                 while (deleteChains.Count != 0);
             }
@@ -369,8 +393,13 @@ namespace CandyCrush
         }
 
         //  Remove the candy objects from the screen and the grid
-        private void removeCandies(List<Chain> chains)
+        private async void removeCandies(List<Chain> chains)
         {
+            if (finishedRemoving != false)
+            {
+                finishedRemoving = false;
+            }
+
             foreach (Chain chain in chains)
             {
                 foreach (candy candy in chain.candies)
@@ -388,15 +417,25 @@ namespace CandyCrush
                         easing = new CCEaseOut(coreAction, 0.1f);
                         removeCandy.RunAction(coreAction);
 
+                        await Task.Delay(50);   // Wait for the scaling animation to show a bit before continuing on to remove the candy
                         removeCandy.RemoveFromParent(); // This should remove the candy from the screen
                     }
                 }
+                //  Wait for all of the candies to be removed before moving on to the next chain in the list of chains
+                await Task.Delay(300);
             }
+
+            finishedRemoving = true;
         }
 
         //  Drops the candies down 
-        private void dropCandies()
+        private async void dropCandies()
         {
+            // Makes sure that dropped bool variable is set false before continuing
+            if (dropped != false)
+            {
+                dropped = false;
+            }
             for (int col = 0; col < gridColumns; col++)
             {
                 for (int row = 8; row > 0; row--)
@@ -406,26 +445,39 @@ namespace CandyCrush
                     {
                         // Find which row number to drop the candy from
                         int tempRow = row - 1;
-                        while (grid[tempRow, col] == null)
+                        while (tempRow >= 0 && grid[tempRow, col] == null)
                         {
                             tempRow--;
                         }
-                        CCPoint position = new CCPoint(70 + (62 * col), 810 - (70 * row));
-                        Candy = candyAt(tempRow, col);
-                        Candy.AddAction(new CCEaseOut(new CCMoveTo(0.3f, position), 0.8f));
-                        Candy.setPosition(tempRow, col);    // Update the row and column of the candy
-                        grid[row, col] = Candy;             // Update the position of the candy within the grid
-                        grid[tempRow, col] = null;
-
+                        //  Only runs if there's a row that has a candy in it
+                        if (tempRow >= 0)
+                        {
+                            CCPoint position = new CCPoint(70 + (62 * col), 810 - (70 * row));
+                            Candy = candyAt(tempRow, col);
+                            Candy.AddAction(new CCEaseOut(new CCMoveTo(0.3f, position), 0.3f));
+                            Candy.setPosition(tempRow, col);    // Update the row and column of the candy
+                            grid[row, col] = Candy;             // Update the position of the candy within the grid
+                            grid[tempRow, col] = null;
+                            //  Wait for the candy to drop before moving to on the next candy
+                            await Task.Delay(50);
+                        }
                     }
                 }
             }
+
+            // Since the method should have gone through the entire grid and finished dropping the candies
+            // need to set dropped to true
+            dropped = true;
         }
 
         //  Fill the holes at the top of the of each column
         private void fillUpColumns()
         {
             int candyType = 0;
+            if (filledAgain != false)
+            {
+                filledAgain = false;
+            }
             for (int col = 0; col < gridColumns; col++)
             {
                 for (int row = 0; row < gridRows && grid[row, col] == null; row++)
@@ -446,10 +498,12 @@ namespace CandyCrush
                     animateAddingNewCandies(row, col);
                 }
             }
+
+            filledAgain = true;
         }
 
         //  Using an animation to add all of the new candies to screen
-        private void animateAddingNewCandies(int row, int col)
+        private async void animateAddingNewCandies(int row, int col)
         {
             // Starting position for the candy to be added
             CCPoint beginningPosition = new CCPoint(70 + (62 * col), 810 - (70 * row) + 50);
@@ -459,6 +513,8 @@ namespace CandyCrush
             AddChild(grid[row, col]);   // Add the candy to the screen
             // Animation to move the candy into it's proper position
             grid[row, col].AddAction(new CCMoveTo(0.3f, endPosition));
+            // Wait for the animation before continuing
+            await Task.Delay(300);
         }
 
         //  Detects any and all horizontal chains
