@@ -41,6 +41,7 @@ namespace CandyCrush
             detectPossibleSwap();
         }
 
+        //  This method keep on filling up the grid until there's at least one possible swap that can be made
         public void shuffle()
         {
             do
@@ -52,6 +53,7 @@ namespace CandyCrush
             while (possibleSwapCount == 0);
         }
 
+        //  Fills the grid up with new candies
         public void fillGrid()
         {
             for (int i = 0; i < gridRows; i++)
@@ -259,6 +261,7 @@ namespace CandyCrush
             int toRow = fromRow + vertDelta;
             int toCol = fromCol + horzDelta;
 
+            //  Make sure that the user didn't swipe out of the grid as there isn't any candies to swap with out there
             if (toRow < 0 || toRow >= gridRows)
             {
                 return;
@@ -316,7 +319,12 @@ namespace CandyCrush
             {
                 //  Swap is not possible so run the failed swap animation
                 failedSwapAnimation(swap);
+                //  Waiting to make sure the animation has been completed
+                await Task.Delay(300);
+
             }
+            //  Turn user interaction back on as all of the matches were removed and the grid filled back up
+            enableListeners();
         }
 
         public void disableListeners()
@@ -356,7 +364,7 @@ namespace CandyCrush
         }
 
         //  Animation for a failed swap
-        private void failedSwapAnimation(Swap swap)
+        private async void failedSwapAnimation(Swap swap)
         {
             const float timeToTake = 0.1f; // in seconds
             CCFiniteTimeAction coreAction = null;
@@ -373,6 +381,9 @@ namespace CandyCrush
             coreAction = new CCMoveTo(timeToTake, positionA);
             secondAction = new CCMoveTo(timeToTake, positionB);
             swap.candyB.RunActions(coreAction, secondAction);
+
+            //  Wait for the animation to complete before moving on
+            await Task.Delay(300);
         }
 
         //  Method to find all chains in the grid 
@@ -424,7 +435,8 @@ namespace CandyCrush
                 //  Wait for all of the candies to be removed before moving on to the next chain in the list of chains
                 await Task.Delay(300);
             }
-
+            //  Since the method is finished removing all of chains, needed to set the finishedRemoving bool variable to true
+            //  so the calling method can get out of it's await loop
             finishedRemoving = true;
         }
 
@@ -455,7 +467,7 @@ namespace CandyCrush
                             CCPoint position = new CCPoint(70 + (62 * col), 810 - (70 * row));
                             Candy = candyAt(tempRow, col);
                             Candy.AddAction(new CCEaseOut(new CCMoveTo(0.3f, position), 0.3f));
-                            Candy.setPosition(tempRow, col);    // Update the row and column of the candy
+                            Candy.setPosition(row, col);    // Update the row and column of the candy
                             grid[row, col] = Candy;             // Update the position of the candy within the grid
                             grid[tempRow, col] = null;
                             //  Wait for the candy to drop before moving to on the next candy
@@ -466,7 +478,7 @@ namespace CandyCrush
             }
 
             // Since the method should have gone through the entire grid and finished dropping the candies
-            // need to set dropped to true
+            // need to set dropped to true so the calling method can get out of the await loop
             dropped = true;
         }
 
@@ -480,11 +492,15 @@ namespace CandyCrush
             }
             for (int col = 0; col < gridColumns; col++)
             {
+                //  Starting the top and working downwards, add a new candy where it's needed
                 for (int row = 0; row < gridRows && grid[row, col] == null; row++)
                 {
                     int newCandyType  = 0;
+                    //  Have to first create a new candy outside of the while loop or otherwise the IDE won't let me use the variable newCandy
+                    //  as it will be seen as using an unassigned variable, even though it will be assigned a new candy in the while loop
                     candy newCandy = new candy(rand, row, col);
                     newCandyType = newCandy.getType();
+                    //  Make sure that each candy that is being added isn't the same as the one that was added previously
                     while (newCandyType == candyType)
                     {
                         newCandy = new candy(rand, row, col);
@@ -498,7 +514,8 @@ namespace CandyCrush
                     animateAddingNewCandies(row, col);
                 }
             }
-
+            //  Since the entire grid was filled back up with candies, need to set the filledAgain bool variable to true
+            //  so the calling method can get out the await loop
             filledAgain = true;
         }
 
@@ -525,20 +542,24 @@ namespace CandyCrush
             {
                 for (int col = 0; col < gridColumns - 2;)
                 {
+                    //  Makes sure that location in the grid isn't empty
                     if (grid[row, col] != null)
                     {
                         int matchType = grid[row, col].getType();
+                        //  If the next two candies match than there's a chain here
                         if (grid[row, col + 1].getType() == matchType && grid[row, col + 2].getType() == matchType)
                         {
+                            //  Create a new chain
                             var chain = new Chain();
                             chain.chainType = Chain.ChainType.Horizontal;
+                            //  Add all of the candies within the chain to chain variable
                             do
                             {
                                 chain.addCandy(candyAt(row, col));
                                 col += 1;
                             }
                             while (col < gridColumns && grid[row, col].getType() == matchType);
-                            horzList.Add(chain);
+                            horzList.Add(chain);    // Add the chain to the list of horizontal chains
                         }
                     }
                     col += 1;
@@ -555,20 +576,24 @@ namespace CandyCrush
             {
                 for (int row = 0; row < gridRows - 2;)
                 {
+                    //  Makes sure that the location in the grid isn't empty
                     if (grid[row, col] != null)
                     {
                         int matchType = grid[row, col].getType();
+                        //  If the two candies below it matches, then there's a chain
                         if (grid[row + 1, col].getType() == matchType && grid[row + 2, col].getType() == matchType)
                         {
+                            //  Create a new chain
                             var chain = new Chain();
                             chain.chainType = Chain.ChainType.Vertical;
+                            //  Add all of the candies within the chain to the chain variable
                             do
                             {
                                 chain.addCandy(candyAt(row, col));
                                 row += 1;
                             }
                             while (row < gridRows && grid[row, col].getType() == matchType);
-                            vertList.Add(chain);
+                            vertList.Add(chain);    // Add the chain to the list of vertical chains
                         }
                     }
                     row += 1;
@@ -577,11 +602,13 @@ namespace CandyCrush
             return vertList;
         }
 
+        //  Get the row from the Y location
         private int convertYToRow(float y)
         {
             return (846 - Convert.ToInt32(y)) / 70;
         }
 
+        //  Get the column from the X location
         private int convertXToColumn(float x)
         {
             return (Convert.ToInt32(x) - 38) / 62;

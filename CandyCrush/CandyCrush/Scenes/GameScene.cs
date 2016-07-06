@@ -141,20 +141,21 @@ namespace CandyCrush.Scenes
                 if (horzDelta != 0 || vertDelta != 0)
                 {
                     debugLabel.Text = "Checking to see if the swap is valid.";
+                    //  Turn off the user interaction as the user should be allowed to move any of candies while candies are swapped, removed, and the grid refilled
                     cLayer.disableListeners();
                     cLayer.trySwap(horzDelta, vertDelta, swipeFromRow, swipeFromCol);
-                    swipeFromCol = 90;
-                    cLayer.ResumeListeners();
                 }
             }
         }
 
+        //  Once the touch is finished reset the swipeFromRow and swipeFromCol
         private void touchesEnded(List<CCTouch> touches, CCEvent touchEvent)
         {
             swipeFromRow = 90;
             swipeFromCol = 90;
         }
 
+        //  If a touch was cancelled, call the touchesEnded method to reset swipe variables
         private void touchesCancelled(List<CCTouch> touches, CCEvent touchEvent)
         {
             touchesEnded(touches, touchEvent);
