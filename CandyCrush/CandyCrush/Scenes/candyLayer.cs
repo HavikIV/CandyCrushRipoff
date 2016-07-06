@@ -24,10 +24,11 @@ namespace CandyCrush
         private int gridRows, gridColumns, possibleSwapCount;
         private candy[,] grid;
         private Random rand = new Random();
-        private CCLabel debugLabel;
+        private CCLabel debugLabel, scoreLabel;
         private List<Swap> possibleSwaps;
         private List<Chain> deleteChains;
         private bool dropped, filledAgain, finishedRemoving;
+        private bool pointGone;
 
         public candyLayer()
         {
@@ -39,6 +40,11 @@ namespace CandyCrush
             addCandies(); // adds the candies to the layer to be displayed
             addDebug();
             detectPossibleSwap();
+            scoreLabel = new CCLabel("0", "Arial", 130, CCLabelFormat.SystemFont);
+            scoreLabel.Color = CCColor3B.Green;
+            scoreLabel.AnchorPoint = new CCPoint(0, 0);
+            scoreLabel.Position = new CCPoint(540, 1000);
+            AddChild(scoreLabel);
         }
 
         //  This method keep on filling up the grid until there's at least one possible swap that can be made
@@ -188,7 +194,7 @@ namespace CandyCrush
         {
             foreach (var item in possibleSwaps)
             {
-                if ((item.candyA == swap.candyA && item.candyB == swap.candyB) ||(item.candyA == swap.candyB && item.candyB == swap.candyA))
+                if ((item.candyA == swap.candyA && item.candyB == swap.candyB) || (item.candyA == swap.candyB && item.candyB == swap.candyA))
                 {
                     return true;
                 }
@@ -429,7 +435,14 @@ namespace CandyCrush
                         removeCandy.RunAction(coreAction);
 
                         await Task.Delay(50);   // Wait for the scaling animation to show a bit before continuing on to remove the candy
+                        pointGone = false;
+                        pointLabel(candy.getRow(), candy.getColumn());
+                        while (!pointGone)
+                        {
+                            await Task.Delay(30);
+                        }
                         removeCandy.RemoveFromParent(); // This should remove the candy from the screen
+                        handlePoints();
                     }
                 }
                 //  Wait for all of the candies to be removed before moving on to the next chain in the list of chains
@@ -438,6 +451,19 @@ namespace CandyCrush
             //  Since the method is finished removing all of chains, needed to set the finishedRemoving bool variable to true
             //  so the calling method can get out of it's await loop
             finishedRemoving = true;
+        }
+
+        private async void pointLabel(int row, int col)
+        {
+            var point = new CCLabel("+10", "Arial", 50, CCLabelFormat.SystemFont);
+            point.Color = CCColor3B.Green;
+            point.AnchorPoint = new CCPoint(0, 0);
+            point.Position = new CCPoint(70 + (62 * col), 810 - (70 * row) + 50);
+            AddChild(point);
+            point.AddAction(new CCMoveTo(0.2f, new CCPoint(500, 1000)));
+            await Task.Delay(200);
+            point.RemoveFromParent();
+            pointGone = true;
         }
 
         //  Drops the candies down 
@@ -495,7 +521,7 @@ namespace CandyCrush
                 //  Starting the top and working downwards, add a new candy where it's needed
                 for (int row = 0; row < gridRows && grid[row, col] == null; row++)
                 {
-                    int newCandyType  = 0;
+                    int newCandyType = 0;
                     //  Have to first create a new candy outside of the while loop or otherwise the IDE won't let me use the variable newCandy
                     //  as it will be seen as using an unassigned variable, even though it will be assigned a new candy in the while loop
                     candy newCandy = new candy(rand, row, col);
@@ -517,6 +543,25 @@ namespace CandyCrush
             //  Since the entire grid was filled back up with candies, need to set the filledAgain bool variable to true
             //  so the calling method can get out the await loop
             filledAgain = true;
+        }
+
+        private void handlePoints()
+        {
+            var points = Convert.ToInt32(scoreLabel.Text);
+            points += 10;
+            if (points < 100)
+            {
+                scoreLabel.Position = new CCPoint(480, 1000);
+            }
+            else if (points >= 100 && points < 1000)
+            {
+                scoreLabel.Position = new CCPoint(400, 1000);
+            }
+            else if (points >= 1000 && points < 10000)
+            {
+                scoreLabel.Position = new CCPoint(320, 1000);
+            }
+            scoreLabel.Text = Convert.ToString(points);
         }
 
         //  Using an animation to add all of the new candies to screen
