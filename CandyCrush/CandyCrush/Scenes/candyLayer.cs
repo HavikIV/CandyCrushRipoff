@@ -19,12 +19,12 @@ using CandyCrush.Entities;
 namespace CandyCrush
 {
     //  A class for a grid
-    public class candyLayer : CCLayerColor
+    public class candyLayer : CCLayer
     {
-        private int gridRows, gridColumns, possibleSwapCount;
+        private int gridRows, gridColumns, possibleSwapCount, movesLeft;
         private candy[,] grid;
         private Random rand = new Random();
-        private CCLabel debugLabel, scoreLabel;
+        private CCLabel debugLabel, scoreLabel, movesLeftLabel;
         private List<Swap> possibleSwaps;
         private List<Chain> deleteChains;
         private bool dropped, filledAgain, finishedRemoving;
@@ -38,13 +38,50 @@ namespace CandyCrush
             grid = new candy[gridRows, gridColumns];
             shuffle(); // fills the grid for the first time
             addCandies(); // adds the candies to the layer to be displayed
-            addDebug();
-            detectPossibleSwap();
+            //addDebug();
             scoreLabel = new CCLabel("0", "Arial", 130, CCLabelFormat.SystemFont);
             scoreLabel.Color = CCColor3B.Green;
             scoreLabel.AnchorPoint = new CCPoint(0, 0);
             scoreLabel.Position = new CCPoint(540, 1000);
             AddChild(scoreLabel);
+            movesLeft = 20; //  Number of moves left
+            // Label to display how many moves are left
+            movesLeftLabel = new CCLabel(Convert.ToString(movesLeft), "Arial", 130, CCLabelFormat.SystemFont);
+            movesLeftLabel.Color = CCColor3B.Blue;
+            movesLeftLabel.AnchorPoint = new CCPoint(0, 0);
+            movesLeftLabel.Position = new CCPoint(0, 1000);
+            AddChild(movesLeftLabel);
+        }
+
+        //  Decrement the number of moves left and update the text in the movesLeftLabel
+        public void decrementMoves()
+        {
+            movesLeft -= 1;
+            movesLeftLabel.Text = Convert.ToString(movesLeft);
+            if (movesLeft == 0)
+            {
+                //  Since all of the moves were used, the game is over
+                gameOver();
+            }
+        }
+
+        public int getmovesLeft()
+        {
+            return movesLeft;
+        }
+
+        private void gameOver()
+        {
+            CCLayer gameOver = new CCLayer();
+            var gameOverLabel = new CCLabel("GAME OVER!", "Arial", 100, CCLabelFormat.SystemFont);
+            gameOverLabel.Color = CCColor3B.Red;
+            gameOverLabel.PositionX = gameOver.ContentSize.Width / 2.0f;
+            gameOverLabel.PositionY = gameOver.ContentSize.Height / 2.0f;
+            gameOver.AddChild(gameOverLabel);
+            gameOver.PositionX = this.ContentSize.Width / 2.0f;
+            gameOver.PositionY = this.ContentSize.Height / 2.0f;
+            AddChild(gameOver);
+            disableListeners();
         }
 
         //  This method keep on filling up the grid until there's at least one possible swap that can be made
@@ -250,7 +287,7 @@ namespace CandyCrush
                 row = convertYToRow(location.Y);   //(846 - Convert.ToInt32(location.Y)) / 70;
                 col = convertXToColumn(location.X);    //(Convert.ToInt32(location.X) - 38) / 62;
                 candy debugCandy = candyAt(row, col);
-                debugLabel.Text = "Touched the candy at [" + debugCandy.getRow() + ", " + debugCandy.getColumn() + "]";
+                //debugLabel.Text = "Touched the candy at [" + debugCandy.getRow() + ", " + debugCandy.getColumn() + "]";
                 return true;
             }
             else
@@ -263,7 +300,7 @@ namespace CandyCrush
         //  otherwise it will call for a failed swap animation
         public async void trySwap(int horzDelta, int vertDelta, int fromRow, int fromCol)
         {
-            debugLabel.Text = "checking to see if a swap is possible.";
+            //debugLabel.Text = "checking to see if a swap is possible.";
             int toRow = fromRow + vertDelta;
             int toCol = fromCol + horzDelta;
 
@@ -279,7 +316,7 @@ namespace CandyCrush
 
             candy toCandy = candyAt(toRow, toCol);
             candy fromCandy = candyAt(fromRow, fromCol);
-            debugLabel.Text = "Switching candy at [" + fromRow + ", " + fromCol + "] with candy at [" + toRow + ", " + toCol + "].";
+            //debugLabel.Text = "Switching candy at [" + fromRow + ", " + fromCol + "] with candy at [" + toRow + ", " + toCol + "].";
 
             Swap swap = new Swap();
             swap.candyA = fromCandy;
@@ -320,6 +357,7 @@ namespace CandyCrush
                     await Task.Delay(300);
                 }
                 while (deleteChains.Count != 0);
+                decrementMoves();
             }
             else
             {
@@ -330,7 +368,10 @@ namespace CandyCrush
 
             }
             //  Turn user interaction back on as all of the matches were removed and the grid filled back up
-            enableListeners();
+            if (movesLeft != 0)
+            {
+                enableListeners();
+            }
         }
 
         public void disableListeners()
@@ -435,12 +476,12 @@ namespace CandyCrush
                         removeCandy.RunAction(coreAction);
 
                         await Task.Delay(50);   // Wait for the scaling animation to show a bit before continuing on to remove the candy
-                        pointGone = false;
-                        pointLabel(candy.getRow(), candy.getColumn());
-                        while (!pointGone)
-                        {
-                            await Task.Delay(30);
-                        }
+                        //pointGone = false;
+                        //pointLabel(candy.getRow(), candy.getColumn());
+                        //while (!pointGone)
+                        //{
+                        //    await Task.Delay(1);
+                        //}
                         removeCandy.RemoveFromParent(); // This should remove the candy from the screen
                         handlePoints();
                     }
@@ -657,8 +698,6 @@ namespace CandyCrush
         private int convertXToColumn(float x)
         {
             return (Convert.ToInt32(x) - 38) / 62;
-        }
-
-        
+        }        
     }
 }
