@@ -42,7 +42,7 @@ namespace CandyCrush.Entities
             }
 
             //  Adding a debug label that will display the candy's row and column numbers, to see if the candy visually match with it's array locations
-            //CCLabel debugLabel = new CCLabel("[" + row +", " + column + "]", "Arial", 30, CCLabelFormat.SystemFont);
+            //CCLabel debugLabel = new CCLabel("[" + row + ", " + column + "]", "Arial", 30, CCLabelFormat.SystemFont);
             //debugLabel.Color = CCColor3B.Black;
             ////debugLabel.Position = new CCPoint(10, 10);
             //debugLabel.AnchorPoint = new CCPoint(0, 0);

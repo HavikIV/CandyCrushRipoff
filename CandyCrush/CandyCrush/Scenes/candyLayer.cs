@@ -27,17 +27,30 @@ namespace CandyCrush
         private CCLabel debugLabel, scoreLabel, movesLeftLabel;
         private List<Swap> possibleSwaps;
         private List<Chain> deleteChains;
-        private bool dropped, filledAgain, finishedRemoving;
+        private bool dropped, filledAgain, finishedRemoving, doneShuffling;
         private bool pointGone;
+        private CCLayer tilesLayer;
+        private int[,] tilesGrid;
 
         public candyLayer()
         {
             gridColumns = 9;
             gridRows = 9;
             possibleSwapCount = 0;
+            tilesGrid = new int[9, 9]
+            { {0, 0, 0, 0, 0, 0, 0, 0, 0 },
+              {0, 0, 0, 0, 0, 0, 0, 0, 0 },
+              {0, 0, 0, 0, 0, 0, 0, 0, 0 },
+              {0, 0, 0, 1, 1, 1, 1, 0, 0 },
+              {0, 0, 0, 1, 1, 1, 1, 0, 0 },
+              {0, 0, 0, 1, 1, 1, 1, 0, 0 },
+              {0, 0, 0, 0, 0, 0, 0, 0, 0 },
+              {0, 0, 0, 0, 0, 0, 0, 0, 0 },
+              {0, 0, 0, 0, 0, 0, 0, 0, 0 } };
+            addTiles();
             grid = new candy[gridRows, gridColumns];
             shuffle(); // fills the grid for the first time
-            addCandies(); // adds the candies to the layer to be displayed
+            //addCandies(); // adds the candies to the layer to be displayed
             //addDebug();
             scoreLabel = new CCLabel("0", "Arial", 130, CCLabelFormat.SystemFont);
             scoreLabel.Color = CCColor3B.Green;
@@ -51,6 +64,27 @@ namespace CandyCrush
             movesLeftLabel.AnchorPoint = new CCPoint(0, 0);
             movesLeftLabel.Position = new CCPoint(0, 1000);
             AddChild(movesLeftLabel);
+        }
+
+        private void addTiles()
+        {
+            tilesLayer = new CCLayer();
+            CCSprite tile;
+            int width = 62;
+            int height = 70;
+            for (int i = 0; i < 9; i++)
+            {
+                for (int j = 0; j < 9; j++)
+                {
+                    if (tilesGrid[i, j] == 1)
+                    {
+                        tile = new CCSprite("tile");
+                        tile.Position = new CCPoint(70 + (width * j), 810 - (height * i));
+                        tilesLayer.AddChild(tile);
+                    }
+                }
+            }
+            AddChild(tilesLayer);
         }
 
         //  Decrement the number of moves left and update the text in the movesLeftLabel
@@ -94,6 +128,39 @@ namespace CandyCrush
                 possibleSwapCount = possibleSwaps.Count;
             }
             while (possibleSwapCount == 0);
+            //  Add the candies to the layer to be displayed to the screen
+            addCandies();
+        }
+
+        public async void reshuffle()
+        {
+            CCLayer shuffleLayer = new CCLayer();
+            var shuffleLabel = new CCLabel("Shuffling", "Arial", 100, CCLabelFormat.SystemFont);
+            shuffleLabel.Color = CCColor3B.Magenta;
+            shuffleLabel.PositionX = shuffleLayer.ContentSize.Width / 2.0f;
+            shuffleLabel.PositionY = shuffleLayer.ContentSize.Height / 2.0f;
+            shuffleLayer.AddChild(shuffleLabel);
+            shuffleLayer.PositionX = this.ContentSize.Width / 2.0f;
+            shuffleLayer.PositionY = this.ContentSize.Height / 2.0f;
+            AddChild(shuffleLayer);
+
+            await Task.Delay(500);
+            //  Remove all of the old candies from the screen
+            for (int i = 0; i < gridRows; i++)
+            {
+                for (int j = 0; j < gridColumns; j++)
+                {
+                    if (tilesGrid[i, j] == 1)
+                    {
+                        candy candy = candyAt(i, j);
+                        candy.RemoveFromParent();
+                    }
+                }
+            }
+            //  Refills the grid up
+            shuffle();
+            doneShuffling = true;
+            shuffleLayer.RemoveFromParent();
         }
 
         //  Fills the grid up with new candies
@@ -103,7 +170,10 @@ namespace CandyCrush
             {
                 for (int j = 0; j < gridColumns; j++)
                 {
-                    assignCandy(i, j); // assigns a new candy the location [i,j] in the grid
+                    if (tilesGrid[i, j] == 1)
+                    {
+                        assignCandy(i, j); // assigns a new candy the location [i,j] in the grid
+                    }
                 }
             }
         }
@@ -121,12 +191,14 @@ namespace CandyCrush
         //  candies should have no stripes when the level is first loaded
         public void assignCandy(int row, int col)
         {
-            candy newCandy = new candy(rand, row, col);
-            while ((col >= 2 && grid[row, col - 1].getType() == newCandy.getType() && grid[row, col - 2].getType() == newCandy.getType())
-                || (row >= 2 && grid[row - 1, col].getType() == newCandy.getType() && grid[row - 2, col].getType() == newCandy.getType()))
+            candy newCandy;
+            do
             {
                 newCandy = new candy(rand, row, col);
             }
+            while (((col >= 2 && grid[row, col - 1] != null && grid[row, col - 2] != null) && grid[row, col - 1].getType() == newCandy.getType() && grid[row, col - 2].getType() == newCandy.getType())
+                || ((row >= 2 && grid[row - 1, col] != null && grid[row - 2, col] != null) && grid[row - 1, col].getType() == newCandy.getType() && grid[row - 2, col].getType() == newCandy.getType()));
+
             grid[row, col] = newCandy;
         }
 
@@ -138,8 +210,11 @@ namespace CandyCrush
             {
                 for (int j = 0; j < gridColumns; j++)
                 {
-                    grid[i, j].Position = new CCPoint(70 + (62 * j), 810 - (70 * i));
-                    AddChild(grid[i, j]);
+                    if (grid[i, j] != null)
+                    {
+                        grid[i, j].Position = new CCPoint(70 + (62 * j), 810 - (70 * i));
+                        AddChild(grid[i, j]);
+                    }
                 }
             }
         }
@@ -246,11 +321,11 @@ namespace CandyCrush
 
             //  Check to see if there's a chain in the row on either side of the candy
             int horzLenght = 1;
-            for (int i = col - 1; i >= 0 && grid[row, i].getType() == cookieType; i--)
+            for (int i = col - 1; (i >= 0 && grid[row, i] != null) && grid[row, i].getType() == cookieType; i--)
             {
                 horzLenght++;
             }
-            for (int i = col + 1; i < gridColumns && grid[row, i].getType() == cookieType; i++)
+            for (int i = col + 1; (i < gridColumns && grid[row, i] != null) && grid[row, i].getType() == cookieType; i++)
             {
                 horzLenght++;
             }
@@ -263,11 +338,11 @@ namespace CandyCrush
 
             //  Check to see if there's a chain in the column either above/below the candy
             int vertLength = 1;
-            for (int i = row - 1; i >= 0 && grid[i, col].getType() == cookieType; i--)
+            for (int i = row - 1; (i >= 0 && grid[i, col] != null) && grid[i, col].getType() == cookieType; i--)
             {
                 vertLength++;
             }
-            for (int i = row + 1; i < gridRows && grid[i, col].getType() == cookieType; i++)
+            for (int i = row + 1; (i < gridRows && grid[i, col] != null) && grid[i, col].getType() == cookieType; i++)
             {
                 vertLength++;
             }
@@ -358,14 +433,34 @@ namespace CandyCrush
                 }
                 while (deleteChains.Count != 0);
                 decrementMoves();
+
+                // In the case that grid ends up with no possible swaps, we need to refill the grid new candies
+                if (possibleSwaps.Count == 0 && movesLeft != 0)
+                {
+                    reshuffle();
+                    while (!doneShuffling)
+                    {
+                        await Task.Delay(50);
+                    }
+                }
             }
             else
             {
-                //  Swap is not possible so run the failed swap animation
-                failedSwapAnimation(swap);
-                //  Waiting to make sure the animation has been completed
-                await Task.Delay(300);
-
+                //  failedSwapAnimation only needs to run if there's valid candies
+                if (swap.candyA != null && swap.candyB != null)
+                {
+                    //  Swap is not possible so run the failed swap animation
+                    failedSwapAnimation(swap);
+                    //  Waiting to make sure the animation has been completed
+                    await Task.Delay(300);
+                }
+                else
+                {
+                    //  The method enables the user interaction again and returns the call point without any type of animation
+                    //  as the user tried to do a swap with an empty location
+                    enableListeners();
+                    return;
+                }
             }
             //  Turn user interaction back on as all of the matches were removed and the grid filled back up
             if (movesLeft != 0)
@@ -519,26 +614,29 @@ namespace CandyCrush
             {
                 for (int row = 8; row > 0; row--)
                 {
-                    candy Candy = candyAt(row, col);
-                    if (Candy == null)
+                    if (tilesGrid[row, col] == 1)
                     {
-                        // Find which row number to drop the candy from
-                        int tempRow = row - 1;
-                        while (tempRow >= 0 && grid[tempRow, col] == null)
+                        candy Candy = candyAt(row, col);
+                        if (Candy == null)
                         {
-                            tempRow--;
-                        }
-                        //  Only runs if there's a row that has a candy in it
-                        if (tempRow >= 0)
-                        {
-                            CCPoint position = new CCPoint(70 + (62 * col), 810 - (70 * row));
-                            Candy = candyAt(tempRow, col);
-                            Candy.AddAction(new CCEaseOut(new CCMoveTo(0.3f, position), 0.3f));
-                            Candy.setPosition(row, col);    // Update the row and column of the candy
-                            grid[row, col] = Candy;             // Update the position of the candy within the grid
-                            grid[tempRow, col] = null;
-                            //  Wait for the candy to drop before moving to on the next candy
-                            await Task.Delay(50);
+                            // Find which row number to drop the candy from
+                            int tempRow = row - 1;
+                            while (tempRow >= 0 && grid[tempRow, col] == null)
+                            {
+                                tempRow--;
+                            }
+                            //  Only runs if there's a row that has a candy in it
+                            if (tempRow >= 0)
+                            {
+                                CCPoint position = new CCPoint(70 + (62 * col), 810 - (70 * row));
+                                Candy = candyAt(tempRow, col);
+                                Candy.AddAction(new CCEaseOut(new CCMoveTo(0.3f, position), 0.3f));
+                                Candy.setPosition(row, col);    // Update the row and column of the candy
+                                grid[row, col] = Candy;             // Update the position of the candy within the grid
+                                grid[tempRow, col] = null;
+                                //  Wait for the candy to drop before moving to on the next candy
+                                await Task.Delay(50);
+                            }
                         }
                     }
                 }
@@ -559,26 +657,29 @@ namespace CandyCrush
             }
             for (int col = 0; col < gridColumns; col++)
             {
-                //  Starting the top and working downwards, add a new candy where it's needed
+                //  Starting at the top and working downwards, add a new candy where it's needed
                 for (int row = 0; row < gridRows && grid[row, col] == null; row++)
                 {
-                    int newCandyType = 0;
-                    //  Have to first create a new candy outside of the while loop or otherwise the IDE won't let me use the variable newCandy
-                    //  as it will be seen as using an unassigned variable, even though it will be assigned a new candy in the while loop
-                    candy newCandy = new candy(rand, row, col);
-                    newCandyType = newCandy.getType();
-                    //  Make sure that each candy that is being added isn't the same as the one that was added previously
-                    while (newCandyType == candyType)
+                    if (tilesGrid[row, col] == 1)
                     {
-                        newCandy = new candy(rand, row, col);
+                        int newCandyType = 0;
+                        //  Have to first create a new candy outside of the while loop or otherwise the IDE won't let me use the variable newCandy
+                        //  as it will be seen as using an unassigned variable, even though it will be assigned a new candy in the while loop
+                        candy newCandy = new candy(rand, row, col);
                         newCandyType = newCandy.getType();
-                    }
-                    candyType = newCandyType;
-                    grid[row, col] = newCandy;
+                        //  Make sure that each candy that is being added isn't the same as the one that was added previously
+                        while (newCandyType == candyType)
+                        {
+                            newCandy = new candy(rand, row, col);
+                            newCandyType = newCandy.getType();
+                        }
+                        candyType = newCandyType;
+                        grid[row, col] = newCandy;
 
-                    // Once all of the candy is created to fill the grid back up
-                    // Use an animation to add it to the screen
-                    animateAddingNewCandies(row, col);
+                        // Once all of the candy is created to fill the grid back up
+                        // Use an animation to add it to the screen
+                        animateAddingNewCandies(row, col);
+                    }
                 }
             }
             //  Since the entire grid was filled back up with candies, need to set the filledAgain bool variable to true
@@ -608,8 +709,14 @@ namespace CandyCrush
         //  Using an animation to add all of the new candies to screen
         private async void animateAddingNewCandies(int row, int col)
         {
+            //  Find the top most tile for the col
+            int topMostRowLocation = 0;
+            while (tilesGrid[topMostRowLocation, col] != 1 && topMostRowLocation <= row)
+            {
+                topMostRowLocation++;
+            }
             // Starting position for the candy to be added
-            CCPoint beginningPosition = new CCPoint(70 + (62 * col), 810 - (70 * row) + 50);
+            CCPoint beginningPosition = new CCPoint(70 + (62 * col), 810 - (70 * topMostRowLocation) + 50);
             // The final position of where the candy goes
             CCPoint endPosition = new CCPoint(70 + (62 * col), 810 - (70 * row));
             grid[row, col].Position = beginningPosition;
@@ -633,7 +740,8 @@ namespace CandyCrush
                     {
                         int matchType = grid[row, col].getType();
                         //  If the next two candies match than there's a chain here
-                        if (grid[row, col + 1].getType() == matchType && grid[row, col + 2].getType() == matchType)
+                        if ((grid[row, col + 1] != null && grid[row, col + 2] != null)
+                            && grid[row, col + 1].getType() == matchType && grid[row, col + 2].getType() == matchType)
                         {
                             //  Create a new chain
                             var chain = new Chain();
@@ -644,7 +752,7 @@ namespace CandyCrush
                                 chain.addCandy(candyAt(row, col));
                                 col += 1;
                             }
-                            while (col < gridColumns && grid[row, col].getType() == matchType);
+                            while ((col < gridColumns && grid[row, col] != null) && grid[row, col].getType() == matchType);
                             horzList.Add(chain);    // Add the chain to the list of horizontal chains
                         }
                     }
@@ -667,7 +775,8 @@ namespace CandyCrush
                     {
                         int matchType = grid[row, col].getType();
                         //  If the two candies below it matches, then there's a chain
-                        if (grid[row + 1, col].getType() == matchType && grid[row + 2, col].getType() == matchType)
+                        if ((grid[row + 1, col] != null && grid[row + 2, col] != null)
+                            && grid[row + 1, col].getType() == matchType && grid[row + 2, col].getType() == matchType)
                         {
                             //  Create a new chain
                             var chain = new Chain();
@@ -678,7 +787,7 @@ namespace CandyCrush
                                 chain.addCandy(candyAt(row, col));
                                 row += 1;
                             }
-                            while (row < gridRows && grid[row, col].getType() == matchType);
+                            while ((row < gridRows && grid[row, col] != null) && grid[row, col].getType() == matchType);
                             vertList.Add(chain);    // Add the chain to the list of vertical chains
                         }
                     }

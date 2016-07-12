@@ -19,7 +19,6 @@ namespace CandyCrush.Scenes
     {
         private CCScene gScene;
         private CCLayer backgroundLayer;
-        private CCLayer tilesLayer;
         private candyLayer cLayer;
         private int swipeFromRow, swipeFromCol; // Keeps track of where the swipe started from
         private CCLabel debugLabel;
@@ -28,7 +27,6 @@ namespace CandyCrush.Scenes
         {
             gScene = new CCScene(gameView);
             addBackground();
-            addTiles();
             addCandyLayer();
             //addDebug();
             swipeFromRow = swipeFromCol = 90;   //initializes the variables to 90 even though this isn't a valid location in the grid
@@ -52,24 +50,6 @@ namespace CandyCrush.Scenes
             background.IsAntialiased = false;
             backgroundLayer.AddChild(background);
             AddChild(backgroundLayer);
-        }
-
-        private void addTiles()
-        {
-            tilesLayer = new CCLayer();
-            CCSprite tile;
-            int width = 62;
-            int height = 70;
-            for (int i = 0; i < 9; i++)
-            {
-                for (int j = 0; j < 9; j++)
-                {
-                    tile = new CCSprite("tile");
-                    tile.Position = new CCPoint(70 + (width * i), 250 + (height * j));
-                    tilesLayer.AddChild(tile);
-                }
-            }
-            AddChild(tilesLayer);
         }
 
         private void addCandyLayer()
