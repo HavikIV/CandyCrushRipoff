@@ -6,51 +6,36 @@ using System.IO;
 using CocosSharp;
 using CandyCrush.Entities;
 using Newtonsoft.Json;
-
-//using CandyCrush.Entities;
+using Android.Content.Res;
 
 namespace CandyCrush
 {
     //  A class for a grid
     public class candyLayer : CCLayer
     {
-        private int gridRows, gridColumns, possibleSwapCount, movesLeft;
         private candy[,] grid;
+        private Level level;
         private Random rand = new Random();
-        private CCLabel debugLabel, scoreLabel, movesLeftLabel;
         private List<Swap> possibleSwaps;
         private List<Chain> deleteChains;
-        private bool dropped, filledAgain, finishedRemoving, doneShuffling;
-        private bool pointGone;
+        private CCLabel debugLabel, scoreLabel, movesLeftLabel;
         private CCLayer tilesLayer;
-        private int[,] tilesGrid;
-        private Level level;
+        private int gridRows, gridColumns, possibleSwapCount, movesLeft;
+        private bool dropped, filledAgain, finishedRemoving, doneShuffling, pointGone;    
 
         public candyLayer()
         {
             gridColumns = 9;
             gridRows = 9;
             possibleSwapCount = 0;
-            movesLeft = 20; //  Number of moves left
+            grid = new candy[gridRows, gridColumns];
 
             //  Load the level
-            loadLevel("Level_0.json");
-
-            //tilesGrid = new int[9, 9]
-            //{ {1, 1, 1, 1, 1, 1, 1, 1, 1 },
-            //  {1, 1, 1, 1, 1, 1, 1, 1, 1 },
-            //  {1, 1, 1, 1, 1, 1, 1, 1, 1 },
-            //  {1, 1, 1, 1, 1, 1, 1, 1, 1 },
-            //  {1, 1, 1, 1, 1, 1, 1, 1, 1 },
-            //  {1, 1, 1, 1, 1, 1, 1, 1, 1 },
-            //  {1, 1, 1, 1, 1, 1, 1, 1, 1 },
-            //  {1, 1, 1, 1, 1, 1, 1, 1, 1 },
-            //  {1, 1, 1, 1, 1, 1, 1, 1, 1 } };
+            loadLevel("Level_4.json");
             addTiles();
-            grid = new candy[gridRows, gridColumns];
             shuffle(); // fills the grid for the first time
 
-            //addDebug();
+            //  Add the labels to display score and the number of moves left
             addScoreLabel();
             addMovesLabel();
         }
@@ -58,9 +43,21 @@ namespace CandyCrush
         //  Loads the given level
         private void loadLevel(string lvl)
         {
-            level = JsonConvert.DeserializeObject<Level>(File.ReadAllText(lvl));
+            //  String variable that will be used to hold the contents of the level's json file
+            string content;
+
+            //  Gets the apps assets which we will use to find the json file for reading
+            AssetManager assets = Android.App.Application.Context.Assets;
+
+            //  Read the level's json file and store everything in the content variable
+            using (StreamReader sr = new StreamReader(assets.Open(Path.Combine("Content/Levels", lvl))))
+            {
+                content = sr.ReadToEnd();
+            }
+
+            //  Parse content into the level class, which will be used to "load" the level
+            level = JsonConvert.DeserializeObject<Level>(content);
             movesLeft = level.moves;
-            tilesGrid = level.tiles;
         }
 
         //  Adds a label that will be used to display the score
@@ -83,6 +80,7 @@ namespace CandyCrush
             AddChild(movesLeftLabel);
         }
 
+        //  Adds a layer to the candyLayer that will exclusively hold the sprites for the tiles
         private void addTiles()
         {
             tilesLayer = new CCLayer();
@@ -93,7 +91,7 @@ namespace CandyCrush
             {
                 for (int j = 0; j < 9; j++)
                 {
-                    if (tilesGrid[i, j] == 1)
+                    if (level.tiles[i, j] == 1)
                     {
                         tile = new CCSprite("tile");
                         tile.Position = new CCPoint(70 + (width * j), 810 - (height * i));
@@ -114,11 +112,6 @@ namespace CandyCrush
                 //  Since all of the moves were used, the game is over
                 gameOver();
             }
-        }
-
-        public int getmovesLeft()
-        {
-            return movesLeft;
         }
 
         private void gameOver()
@@ -167,7 +160,7 @@ namespace CandyCrush
             {
                 for (int j = 0; j < gridColumns; j++)
                 {
-                    if (tilesGrid[i, j] == 1)
+                    if (level.tiles[i, j] == 1)
                     {
                         candy candy = candyAt(i, j);
                         candy.RemoveFromParent();
@@ -187,7 +180,7 @@ namespace CandyCrush
             {
                 for (int j = 0; j < gridColumns; j++)
                 {
-                    if (tilesGrid[i, j] == 1)
+                    if (level.tiles[i, j] == 1)
                     {
                         assignCandy(i, j); // assigns a new candy the location [i,j] in the grid
                     }
@@ -195,11 +188,11 @@ namespace CandyCrush
             }
         }
 
+        //  Adds a label that's used to display debug info
         private void addDebug()
         {
             debugLabel = new CCLabel("Debug info shows here...", "Arial", 30, CCLabelFormat.SystemFont);
             debugLabel.Color = CCColor3B.Black;
-            //debugLabel.Position = new CCPoint(10, 10);
             debugLabel.AnchorPoint = new CCPoint(0, 0);
             AddChild(debugLabel);
         }
@@ -606,6 +599,7 @@ namespace CandyCrush
             finishedRemoving = true;
         }
 
+        //  Adds a label that shows "+10" for every candy that is destroyed, it then proceeds towards that scoreLabel, implying that it gets added to the score.
         private async void pointLabel(int row, int col)
         {
             var point = new CCLabel("+10", "Arial", 50, CCLabelFormat.SystemFont);
@@ -631,7 +625,7 @@ namespace CandyCrush
             {
                 for (int row = 8; row > 0; row--)
                 {
-                    if (tilesGrid[row, col] == 1)
+                    if (level.tiles[row, col] == 1)
                     {
                         candy Candy = candyAt(row, col);
                         if (Candy == null)
@@ -677,7 +671,7 @@ namespace CandyCrush
                 //  Starting at the top and working downwards, add a new candy where it's needed
                 for (int row = 0; row < gridRows && grid[row, col] == null; row++)
                 {
-                    if (tilesGrid[row, col] == 1)
+                    if (level.tiles[row, col] == 1)
                     {
                         int newCandyType = 0;
                         //  Have to first create a new candy outside of the while loop or otherwise the IDE won't let me use the variable newCandy
@@ -728,7 +722,7 @@ namespace CandyCrush
         {
             //  Find the top most tile for the col
             int topMostRowLocation = 0;
-            while (tilesGrid[topMostRowLocation, col] != 1 && topMostRowLocation <= row)
+            while (level.tiles[topMostRowLocation, col] != 1 && topMostRowLocation <= row)
             {
                 topMostRowLocation++;
             }
