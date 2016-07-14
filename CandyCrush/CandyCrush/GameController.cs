@@ -17,8 +17,9 @@ namespace CandyCrush
         {
             GameView = gameView;
 
-            var contentSearchPaths = new List<string>() { "Fonts", "Sounds" };
+            var contentSearchPaths = new List<string>() { "Fonts", "Sounds", "Levels" };
             contentSearchPaths.Add("Images");
+            //contentSearchPaths.Add("Levels");
             GameView.ContentManager.SearchPaths = contentSearchPaths;
 
             // Set world dimensions

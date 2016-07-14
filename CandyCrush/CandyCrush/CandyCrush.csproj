@@ -57,6 +57,10 @@
       <Private>True</Private>
     </Reference>
     <Reference Include="mscorlib" />
+    <Reference Include="Newtonsoft.Json, Version=9.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
+      <HintPath>..\packages\Newtonsoft.Json.9.0.1\lib\portable-net45+wp80+win8+wpa81\Newtonsoft.Json.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
     <Reference Include="OpenTK-1.0" />
     <Reference Include="System" />
     <Reference Include="System.Core" />
@@ -67,6 +71,7 @@
     <Compile Include="Chain.cs" />
     <Compile Include="Entities\candies.cs" />
     <Compile Include="GameController.cs" />
+    <Compile Include="Level.cs" />
     <Compile Include="Scenes\GameScene.cs" />
     <Compile Include="Scenes\candyLayer.cs" />
     <Compile Include="MainActivity.cs">
@@ -80,6 +85,11 @@
   </ItemGroup>
   <ItemGroup>
     <AndroidAsset Include="Assets\Content\Fonts\MarkerFelt-22.xnb" />
+    <AndroidAsset Include="Assets\Content\Levels\Level_0.json" />
+    <AndroidAsset Include="Assets\Content\Levels\Level_2.json" />
+    <AndroidAsset Include="Assets\Content\Levels\Level_3.json" />
+    <AndroidAsset Include="Assets\Content\Levels\Level_4.json" />
+    <AndroidAsset Include="Assets\Content\Levels\Level_1.json" />
     <None Include="packages.config" />
     <None Include="Resources\AboutResources.txt" />
     <None Include="Assets\AboutAssets.txt" />

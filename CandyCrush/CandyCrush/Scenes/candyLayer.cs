@@ -1,9 +1,11 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using System.IO;
 
 using CocosSharp;
 using CandyCrush.Entities;
+using Newtonsoft.Json;
 
 //using CandyCrush.Entities;
 
@@ -22,34 +24,58 @@ namespace CandyCrush
         private bool pointGone;
         private CCLayer tilesLayer;
         private int[,] tilesGrid;
+        private Level level;
 
         public candyLayer()
         {
             gridColumns = 9;
             gridRows = 9;
             possibleSwapCount = 0;
-            tilesGrid = new int[9, 9]
-            { {0, 0, 0, 0, 0, 0, 0, 0, 0 },
-              {0, 0, 0, 0, 0, 0, 0, 0, 0 },
-              {0, 0, 0, 0, 0, 0, 0, 0, 0 },
-              {0, 0, 0, 1, 1, 1, 1, 0, 0 },
-              {0, 0, 0, 1, 1, 1, 1, 0, 0 },
-              {0, 0, 0, 1, 1, 1, 1, 0, 0 },
-              {0, 0, 0, 0, 0, 0, 0, 0, 0 },
-              {0, 0, 0, 0, 0, 0, 0, 0, 0 },
-              {0, 0, 0, 0, 0, 0, 0, 0, 0 } };
+            movesLeft = 20; //  Number of moves left
+
+            //  Load the level
+            loadLevel("Level_0.json");
+
+            //tilesGrid = new int[9, 9]
+            //{ {1, 1, 1, 1, 1, 1, 1, 1, 1 },
+            //  {1, 1, 1, 1, 1, 1, 1, 1, 1 },
+            //  {1, 1, 1, 1, 1, 1, 1, 1, 1 },
+            //  {1, 1, 1, 1, 1, 1, 1, 1, 1 },
+            //  {1, 1, 1, 1, 1, 1, 1, 1, 1 },
+            //  {1, 1, 1, 1, 1, 1, 1, 1, 1 },
+            //  {1, 1, 1, 1, 1, 1, 1, 1, 1 },
+            //  {1, 1, 1, 1, 1, 1, 1, 1, 1 },
+            //  {1, 1, 1, 1, 1, 1, 1, 1, 1 } };
             addTiles();
             grid = new candy[gridRows, gridColumns];
             shuffle(); // fills the grid for the first time
-            //addCandies(); // adds the candies to the layer to be displayed
+
             //addDebug();
+            addScoreLabel();
+            addMovesLabel();
+        }
+
+        //  Loads the given level
+        private void loadLevel(string lvl)
+        {
+            level = JsonConvert.DeserializeObject<Level>(File.ReadAllText(lvl));
+            movesLeft = level.moves;
+            tilesGrid = level.tiles;
+        }
+
+        //  Adds a label that will be used to display the score
+        private void addScoreLabel()
+        {
             scoreLabel = new CCLabel("0", "Arial", 130, CCLabelFormat.SystemFont);
             scoreLabel.Color = CCColor3B.Green;
             scoreLabel.AnchorPoint = new CCPoint(0, 0);
             scoreLabel.Position = new CCPoint(540, 1000);
             AddChild(scoreLabel);
-            movesLeft = 20; //  Number of moves left
-            // Label to display how many moves are left
+        }
+
+        //  Adds a lebel that will be used to display the amount of moves the user has left
+        private void addMovesLabel()
+        {
             movesLeftLabel = new CCLabel(Convert.ToString(movesLeft), "Arial", 130, CCLabelFormat.SystemFont);
             movesLeftLabel.Color = CCColor3B.Blue;
             movesLeftLabel.AnchorPoint = new CCPoint(0, 0);
