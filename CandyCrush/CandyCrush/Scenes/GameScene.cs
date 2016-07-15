@@ -64,6 +64,7 @@ namespace CandyCrush.Scenes
 
             //debugLabel.Text = "The user touched the screen.";
             int row = 90, col = 90;
+            //  Checks to see if the touch was within the grid
             if (cLayer.convertToPoint(location, ref row, ref col))
             {
                 candy candy = cLayer.candyAt(row, col);
@@ -72,6 +73,12 @@ namespace CandyCrush.Scenes
                     swipeFromRow = candy.getRow();
                     swipeFromCol = candy.getColumn();
                 }
+            }
+            else if ((location.X > 19 && location.X < 81) && (location.Y > 19 && location.Y < 81))
+            {
+                //  The user touched the back button
+                var newScene = new TitleScene(GameController.GameView);
+                GameController.GoToScene(newScene);
             }
         }
 

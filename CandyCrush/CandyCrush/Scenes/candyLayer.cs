@@ -39,6 +39,9 @@ namespace CandyCrush
             //  Add the labels to display score and the number of moves left
             addScoreLabel();
             addMovesLabel();
+
+            //  Add a back button
+            addBackButton();
         }
 
         //  Loads the given level
@@ -64,11 +67,19 @@ namespace CandyCrush
         //  Adds a label that will be used to display the score
         private void addScoreLabel()
         {
+            //  Label to display the user's current score
             scoreLabel = new CCLabel("0", "Arial", 130, CCLabelFormat.SystemFont);
             scoreLabel.Color = CCColor3B.Green;
             scoreLabel.AnchorPoint = new CCPoint(0, 0);
             scoreLabel.Position = new CCPoint(540, 1000);
             AddChild(scoreLabel);
+
+            //  Label to display the targetScore the user has to meet to beat the level
+            var targetLabel = new CCLabel("/" + level.targetScore.ToString(), "Arial", 50, CCLabelFormat.SystemFont);
+            targetLabel.Color = CCColor3B.Green;
+            targetLabel.AnchorPoint = new CCPoint(0, 0);
+            targetLabel.Position = new CCPoint(500, 980);
+            AddChild(targetLabel);
         }
 
         //  Adds a lebel that will be used to display the amount of moves the user has left
@@ -79,6 +90,20 @@ namespace CandyCrush
             movesLeftLabel.AnchorPoint = new CCPoint(0, 0);
             movesLeftLabel.Position = new CCPoint(0, 1000);
             AddChild(movesLeftLabel);
+        }
+
+        //  Adds a Back button to go back to the level select scene
+        private void addBackButton()
+        {
+            //  Add a back button
+            var button = new CCSprite("button.png");
+            button.Position = new CCPoint(50, 50);
+            var label = new CCLabel("BACK", "Arial", 20, CCLabelFormat.SystemFont);
+            label.Color = CCColor3B.Black;
+            label.PositionX = button.ContentSize.Width / 2.0f;
+            label.PositionY = button.ContentSize.Height / 2.0f;
+            button.AddChild(label);
+            AddChild(button);
         }
 
         //  Adds a layer to the candyLayer that will exclusively hold the sprites for the tiles
@@ -124,7 +149,7 @@ namespace CandyCrush
         private void gameWon()
         {
             CCLayer gameWon = new CCLayer();
-            var gameWonLabel = new CCLabel("GAME OVER!", "Arial", 100, CCLabelFormat.SystemFont);
+            var gameWonLabel = new CCLabel("Winner!", "Arial", 100, CCLabelFormat.SystemFont);
             var drawNode = new CCDrawNode();
 
             //  Dim the screen
@@ -143,7 +168,7 @@ namespace CandyCrush
 
             //  Add a Home button
             var button = new CCSprite("button.png");
-            button.Position = new CCPoint(0 / 2.0f, -368);
+            button.Position = new CCPoint(0, -368);
             var label = new CCLabel("HOME", "Arial", 20, CCLabelFormat.SystemFont);
             label.Color = CCColor3B.Black;
             label.PositionX = button.ContentSize.Width / 2.0f;
