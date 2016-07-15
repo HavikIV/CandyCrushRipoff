@@ -5,6 +5,7 @@ using System.IO;
 
 using CocosSharp;
 using CandyCrush.Entities;
+using CandyCrush.Scenes;
 using Newtonsoft.Json;
 using Android.Content.Res;
 
@@ -21,9 +22,9 @@ namespace CandyCrush
         private CCLabel debugLabel, scoreLabel, movesLeftLabel;
         private CCLayer tilesLayer;
         private int gridRows, gridColumns, possibleSwapCount, movesLeft;
-        private bool dropped, filledAgain, finishedRemoving, doneShuffling, pointGone;    
+        private bool dropped, filledAgain, finishedRemoving, doneShuffling, pointGone;
 
-        public candyLayer()
+        public candyLayer(int lvl)
         {
             gridColumns = 9;
             gridRows = 9;
@@ -31,7 +32,7 @@ namespace CandyCrush
             grid = new candy[gridRows, gridColumns];
 
             //  Load the level
-            loadLevel("Level_4.json");
+            loadLevel("Level_" + lvl + ".json");
             addTiles();
             shuffle(); // fills the grid for the first time
 
@@ -107,25 +108,102 @@ namespace CandyCrush
         {
             movesLeft -= 1;
             movesLeftLabel.Text = Convert.ToString(movesLeft);
-            if (movesLeft == 0)
+            if (movesLeft == 0 && Convert.ToInt32(scoreLabel.Text) < level.targetScore)
             {
                 //  Since all of the moves were used, the game is over
                 gameOver();
             }
+            else if (movesLeft == 0 && Convert.ToInt32(scoreLabel.Text) >= level.targetScore)
+            {
+                //  The user was able to get the required amount of points to pass the level
+                //  Display the winning notification and then take the user back to the titleScene
+                gameWon();
+            }
+        }
+
+        private void gameWon()
+        {
+            CCLayer gameWon = new CCLayer();
+            var gameWonLabel = new CCLabel("GAME OVER!", "Arial", 100, CCLabelFormat.SystemFont);
+            var drawNode = new CCDrawNode();
+
+            //  Dim the screen
+            drawNode.DrawRect(new CCRect(-1000, -1000, 2000, 2000), new CCColor4B(0, 0, 0, 160));
+            gameWon.AddChild(drawNode);
+
+            //  Set the settings for the gameOverLabel
+            gameWonLabel.Color = CCColor3B.Red;
+            gameWonLabel.PositionX = gameWon.ContentSize.Width / 2.0f;
+            gameWonLabel.PositionY = gameWon.ContentSize.Height / 2.0f;
+            gameWon.AddChild(gameWonLabel);   // Add the label to the layer
+
+            //  Set the position of the layer
+            gameWon.PositionX = this.ContentSize.Width / 2.0f;
+            gameWon.PositionY = this.ContentSize.Height / 2.0f;
+
+            //  Add a Home button
+            var button = new CCSprite("button.png");
+            button.Position = new CCPoint(0 / 2.0f, -368);
+            var label = new CCLabel("HOME", "Arial", 20, CCLabelFormat.SystemFont);
+            label.Color = CCColor3B.Black;
+            label.PositionX = button.ContentSize.Width / 2.0f;
+            label.PositionY = button.ContentSize.Height / 2.0f;
+            button.AddChild(label);
+            gameWon.AddChild(button);
+
+            AddChild(gameWon); //  Add the layer to the candyLayer
+
+            var touchListener = new CCEventListenerTouchAllAtOnce();
+            touchListener.OnTouchesBegan = HandleTouchesBegan;
+            gameWon.AddEventListener(touchListener);
         }
 
         private void gameOver()
         {
             CCLayer gameOver = new CCLayer();
             var gameOverLabel = new CCLabel("GAME OVER!", "Arial", 100, CCLabelFormat.SystemFont);
+            var drawNode = new CCDrawNode();
+
+            //  Dim the screen
+            drawNode.DrawRect(new CCRect(-1000, -1000, 2000, 2000), new CCColor4B(0, 0, 0, 160));
+            gameOver.AddChild(drawNode);
+
+            //  Set the settings for the gameOverLabel
             gameOverLabel.Color = CCColor3B.Red;
             gameOverLabel.PositionX = gameOver.ContentSize.Width / 2.0f;
             gameOverLabel.PositionY = gameOver.ContentSize.Height / 2.0f;
-            gameOver.AddChild(gameOverLabel);
+            gameOver.AddChild(gameOverLabel);   // Add the label to the layer
+
+            //  Set the position of the layer
             gameOver.PositionX = this.ContentSize.Width / 2.0f;
             gameOver.PositionY = this.ContentSize.Height / 2.0f;
-            AddChild(gameOver);
-            disableListeners();
+
+            //  Add a Home button
+            var button = new CCSprite("button.png");
+            button.Position = new CCPoint(0, -368);
+            var label = new CCLabel("HOME", "Arial", 20, CCLabelFormat.SystemFont);
+            label.Color = CCColor3B.Black;
+            label.PositionX = button.ContentSize.Width / 2.0f;
+            label.PositionY = button.ContentSize.Height / 2.0f;
+            button.AddChild(label);
+            gameOver.AddChild(button);
+
+            AddChild(gameOver); //  Add the layer to the candyLayer
+
+            var touchListener = new CCEventListenerTouchAllAtOnce();
+            touchListener.OnTouchesBegan = HandleTouchesBegan;
+            gameOver.AddEventListener(touchListener);
+        }
+
+        private void HandleTouchesBegan(List<CCTouch> arg1, CCEvent arg2)
+        {
+            var location = arg1[0].Location;
+            //  Determine if the user touched one of the buttons
+            if ((location.X > 289 && location.X < 351) && (location.Y > 169 && location.Y < 231))
+            {
+                var newScene = new TitleScene(GameController.GameView);
+                GameController.GoToScene(newScene);
+            }
         }
 
         //  This method keep on filling up the grid until there's at least one possible swap that can be made

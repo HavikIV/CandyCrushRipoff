@@ -13,11 +13,11 @@ namespace CandyCrush.Scenes
         private int swipeFromRow, swipeFromCol; // Keeps track of where the swipe started from
         private CCLabel debugLabel;
 
-        public GameScene(CCGameView gameView) : base(gameView)
+        public GameScene(CCGameView gameView, int level) : base(gameView)
         {
             gScene = new CCScene(gameView);
             addBackground();
-            addCandyLayer();
+            addCandyLayer(level);
             //addDebug();
             swipeFromRow = swipeFromCol = 90;   //initializes the variables to 90 even though this isn't a valid location in the grid
             CreateTouchListener();
@@ -42,9 +42,9 @@ namespace CandyCrush.Scenes
             AddChild(backgroundLayer);
         }
 
-        private void addCandyLayer()
+        private void addCandyLayer(int level)
         {
-            cLayer = new candyLayer();
+            cLayer = new candyLayer(level);
             AddChild(cLayer);
         }
 

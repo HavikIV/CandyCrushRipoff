@@ -17,20 +17,26 @@ namespace CandyCrush.Scenes
             layer.AddChild(background);
             this.AddChild(layer);
 
-            CreateText();
+            addButtons();
 
             CreateTouchListener();
 
         }
 
-        private void CreateText()
+        //  Add labels that will act as buttons for each level
+        private void addButtons()
         {
-            var label = new CCLabel("Tap to begin", "Arial", 30, CCLabelFormat.SystemFont);
-            label.Color = CCColor3B.Black;
-            label.PositionX = layer.ContentSize.Width / 2.0f;
-            label.PositionY = layer.ContentSize.Height / 2.0f;
-
-            layer.AddChild(label);
+            for (int i = 0; i < 5; i++)
+            {
+                var button = new CCSprite("button.png");
+                button.Position = new CCPoint(80 + (i * 120), 810);
+                var label = new CCLabel((i + 1).ToString(), "Arial", 30, CCLabelFormat.SystemFont);
+                label.Color = CCColor3B.Black;
+                label.PositionX = button.ContentSize.Width / 2.0f;
+                label.PositionY = button.ContentSize.Height / 2.0f;
+                button.AddChild(label);
+                layer.AddChild(button);
+            }
         }
 
         private void CreateTouchListener()
@@ -40,10 +46,28 @@ namespace CandyCrush.Scenes
             layer.AddEventListener(touchListener);
         }
 
+        private bool buttonPressed(CCPoint location, ref int level)
+        {
+            for (int i = 0; i < 5; i++)
+            {
+                if ((location.Y >= 779 && location.Y < 841) && (location.X >= (49 + (i * 120)) && location.X <= (111 + (i * 120))))
+                {
+                    level = i;
+                    return true;
+                }
+            }
+            return false;
+        }
+
         private void HandleTouchesBegan(List<CCTouch> arg1, CCEvent arg2)
         {
-            var newScene = new GameScene(GameController.GameView);
-            GameController.GoToScene(newScene);
+            int level = 0;
+            //  Determine if the user touched one of the buttons
+            if (buttonPressed(arg1[0].Location, ref level))
+            {
+                var newScene = new GameScene(GameController.GameView, level);
+                GameController.GoToScene(newScene);
+            }
         }
     }
 }
